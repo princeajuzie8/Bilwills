@@ -1,0 +1,31 @@
+export const lightTheme = {
+    body: '#FFFFFF',
+    body2: '#F5F7FB',
+    body3: '#FFFFFF',
+    iconcolor: "#878A92",
+    iconcolor1: "#7068EE",
+    iconcolors: "#7269EF",
+    activebg: "#F7F7FF",
+    search: "#E6EBF5",
+    search1: "#E6EBF5",
+    text: '#495057',  
+    border: "#f0eff5",
+    newmsg: "#F4D7E2",
+    online: "#fff",
+   
+}
+export const darkTheme = {
+    body: '#36404A',
+    body2: '#303841',
+    body3: '#262E35',
+    iconcolor: "#A6B0CF",
+    iconcolor1: "#b6b2f6",
+    iconcolors: "#7068EE",
+    activebg: "#3E4A56",
+    search: "#36404A",
+    search1: "#36404acf",
+    text: '#E1E9F1',
+    border: "#36404a",
+    newmsg: "#523B49",
+    online: "#000000d7",
+}

@@ -9,6 +9,9 @@ import Settings from "./settings/Settings";
 import Contact from "./Pages/Contact";
 import Main from "./Chats/Main";
 import SignUp from "./Auth/Signup";
+import Login from "./Auth/Login";
+import Recover from "./Auth/Recover";
+import ConfirmPassword from "./Auth/ConfirmPassword";
 function App() {
  const [theme, setTheme] = useDarkMode();
 
@@ -38,6 +41,9 @@ function App() {
           element={<Main Themetogler={Themetogler} />}
         />
         <Route path="/signup"  element={<SignUp />} />
+        <Route path="/login"  element={<Login />} />
+        <Route path="/recover"  element={<Recover />} />
+        <Route path="/lorem"  element={<ConfirmPassword />} />
       </Routes>
     </ThemeProvider>
   );

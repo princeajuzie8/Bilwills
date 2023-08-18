@@ -13,11 +13,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 const Main = styled.div`
   background-color: #fff;
   height: auto;
-  * {
   margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 font-family: 'Manrope';
 
 body {
@@ -47,7 +43,6 @@ code {
     background-image: url(${signupby});
     background-position: center;
     background-size: cover;
-    position: sticky;
     height: 100vh;
     width: 100%;
 
@@ -56,13 +51,13 @@ code {
      
 
       .figure{
-        margin-left: 35px;
-      margin-top: 20px;
-            height: 50px;
-          a{
+         margin-top: 0px;
+      
+        height: 50px;
+        a{
+            // padding-top: 50px;
 
            img{
-            margin-top: 25px;
           
           }
           }
@@ -85,7 +80,7 @@ code {
       flex-direction: row;
       justify-content: end;
       align-self: auto;
-      margin-top: 20px;
+      margin-top: 10px;
 
       p {
         text-decoration: none;
@@ -105,7 +100,7 @@ code {
 
         span {
           font-weight: bold;
-          color: #32cd32;
+          color: #7269ef;
           font-size: 14px;
           margin-right: 5px;
           margin-left: 5px;
@@ -114,9 +109,15 @@ code {
     }
 
     .Bform {
+      * {
+      margin: 0 auto;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
       text-align: center;
       margin-top: 10px;
-      margin-bottom: 70px;
+      margin-bottom: 20px;
       padding: 20px 60px;
       margin-left: auto;
       margin-right: auto;
@@ -200,7 +201,7 @@ code {
             border-radius: 5px;
 
             :hover {
-              border: 1px solid #36cc36;
+              border: 1px solid #7269ef;
               border-radius: 5px;
               cursor: pointer;
             }
@@ -262,7 +263,7 @@ code {
 
             .bf1 label {
               font-size: 11px;
-              color: #32cd32;
+              color: #7269ef;
               font-weight: 600;
               margin-left: 5px;
               margin-right: 20px;
@@ -389,7 +390,7 @@ const SignUp = () => {
     }
 
     if (
-      fullname.length <= 0 ||
+
       username.length <= 0 ||
       email.length <= 0 ||
       dob.length === null ||
@@ -397,9 +398,11 @@ const SignUp = () => {
     ) {
       signupbtn.style.background = "#efefef";
       signupbtn.style.color = "gray";
+      signupbtn.setAttribute("disable", true)
     } else {
       signupbtn.style.background = "#1b1c31";
       signupbtn.style.color = "aliceblue";
+      signupbtn.removeAttribute("disable")
     }
   };
 
@@ -413,7 +416,9 @@ const SignUp = () => {
 
           <Link to="/">
             {" "}
-         <img src={Logo} alt="" />
+         <img src={Logo} alt="" style={{
+          marginLeft: "0px",
+         }}/>
           </Link>
             </figure>
         </div>
@@ -580,7 +585,7 @@ const SignUp = () => {
                     name=""
                     id="signUpBtn"
                     value="Create Account"
-                 
+                    
                   />
                   <div className="bf1">
                     <p>

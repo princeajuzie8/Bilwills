@@ -47,7 +47,7 @@ const Container = styled.div`
                 gap: 10px;
 
                 .msgtext {
-                  color: #fff;
+                  color: ${props => props.theme.text};
                   font-weight: 500;
                   font-size: 15px;
                   span {
@@ -293,7 +293,7 @@ const Container = styled.div`
                 gap: 10px;
 
                 .msgtext {
-                  color: #fff;
+                  color: ${props => props.theme.text};
                   font-weight: 500;
                   font-size: 15px;
                 }

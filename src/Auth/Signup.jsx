@@ -9,6 +9,8 @@ import "react-phone-number-input/style.css";
 import PhoneInput from "react-phone-number-input";
 import {  useState  } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { useSelector,useDispatch } from "react-redux";
+import { userCreateWithEmail,userCreateWithGoogle,usersLogin,usersLogout } from "../Redux/slice/UserSlice";
 
 const Main = styled.div`
   background-color: #fff;
@@ -344,9 +346,9 @@ code {
 `;
 
 const SignUp = () => {
-
-  const [fullname, setFullName] = useState("");
-  const [username, setUserName] = useState("");
+const dispatch = useDispatch()
+const {userdata} = useSelector((state)=> state.user)
+  const [username, setUserName] = useState(userdata.displayName);
   const [email, setEmail] = useState("");
   const [value, setValue] = useState();
   const [dob, setDob] = useState("");
@@ -405,6 +407,11 @@ const SignUp = () => {
       signupbtn.removeAttribute("disable")
     }
   };
+
+  const HandleCreateWithEmail = async (e) => {
+    e.preventDefault();
+    
+  }
 
 
   return (

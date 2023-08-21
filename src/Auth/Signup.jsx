@@ -11,6 +11,15 @@ import {  useState  } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useSelector,useDispatch } from "react-redux";
 import { userCreateWithEmail,userCreateWithGoogle,usersLogin,usersLogout } from "../Redux/slice/UserSlice";
+import { signUp } from "../Redux/asyncThunks";
+import { db } from "../config/firebase/firebase";
+import bcrypt from "bcryptjs"
+import {
+  createUserWithEmailAndPassword,
+
+} from "firebase/auth";
+import { Auth } from "../config/firebase/firebase";
+import { setDoc, doc } from "firebase/firestore";
 
 const Main = styled.div`
   background-color: #fff;
@@ -350,7 +359,7 @@ const dispatch = useDispatch()
 const {userdata} = useSelector((state)=> state.user)
   const [username, setUserName] = useState(userdata.displayName);
   const [email, setEmail] = useState("");
-  const [value, setValue] = useState();
+  const [Phone, setPhone] = useState(null);
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
 
@@ -410,6 +419,39 @@ const {userdata} = useSelector((state)=> state.user)
 
   const HandleCreateWithEmail = async (e) => {
     e.preventDefault();
+    try{
+      const hashedPassword = await bcrypt.hash(password, 10);
+  const  userCresidential = await createUserWithEmailAndPassword(Auth,email,hashedPassword)
+
+  
+   
+      console.log(userCresidential);
+      await setDoc(doc(db, "users", userCresidential.user.uid), {
+        displayName: username,
+        email: email,
+        password: hashedPassword,
+        uid: userCresidential.user.uid,
+        dob: dob,
+       phone: Phone,
+});
+    // await setDoc(doc(db,"users", ),{
+    
+    // })
+  
+       
+       dispatch(userCreateWithEmail({
+            displayName: username,
+            email: email,
+            password: hashedPassword,
+            id: userCresidential.user.uid,
+            dob: dob,
+            phone: Phone,
+          }));
+
+      }catch(err){
+        console.error(err);
+      }
+
     
   }
 
@@ -471,7 +513,7 @@ const {userdata} = useSelector((state)=> state.user)
               </div>
 
               <div className="loginform">
-                <form action="" className="bregdetails" >
+                <form action="" className="bregdetails" onSubmit={HandleCreateWithEmail}>
                   <div className="a">
                     {/* <input
                       type="text"
@@ -526,10 +568,11 @@ const {userdata} = useSelector((state)=> state.user)
                     <PhoneInput
                       defaultCountry="US"
                       placeholder="Enter phone number"
-                      value={value}
+                      value={Phone}
                       required
                       maxLength={15}
-                      onChange={(e) => setValue()}
+                      // onChange={(e) => setPhone(e.target.value)}
+                      onChange={setPhone}
                       size={22}
                       name="phonenumber"
                     />
@@ -592,7 +635,7 @@ const {userdata} = useSelector((state)=> state.user)
                     name=""
                     id="signUpBtn"
                     value="Create Account"
-                    
+                    onClick={HandleCreateWithEmail}
                   />
                   <div className="bf1">
                     <p>

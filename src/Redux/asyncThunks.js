@@ -8,9 +8,9 @@ import {
 import { Auth } from "../config/firebase/firebase";
 import { setUser } from "./slice/AuthSlice";
 
-export const signUp = (email, password) => dispatch => {
+export const signUp = (email, password)  => {
     createUserWithEmailAndPassword(Auth, email, password)
-      .then(user => dispatch(setUser(user)))
+      // .then(user => dispatch(setUser(user)))
   };
 
   export const login = (email, password) => dispatch => {

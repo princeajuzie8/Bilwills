@@ -10,11 +10,14 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "bootstrap": "^5.2.3",
     "custom-react-accordion": "^1.0.4",
     "emoji-picker-react": "^4.4.8",
     "firebase": "^10.2.0",
     "firebase-tools": "^12.4.8",
+    "path-browserify": "^1.0.1",
     "react": "^18.2.0",
     "react-alice-carousel": "^2.7.0",
     "react-avatar-editor": "^13.0.0",
@@ -58,5 +61,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "html-loader": "^4.2.0"
   }
 }

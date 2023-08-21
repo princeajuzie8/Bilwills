@@ -2,7 +2,6 @@ import { takeLatest, put, call } from 'redux-saga/effects';
 import { onAuthStateChanged } from 'firebase/auth';
 import { setUser } from './slice/AuthSlice';
 import { Auth } from '../config/firebase/firebase';
-
 function* syncUserWithAuth(action) {
     const unsubscribe = onAuthStateChanged(
         Auth, 

@@ -5,7 +5,7 @@ import { RiImageFill } from "react-icons/ri"
 import { RiSendPlane2Fill } from "react-icons/ri";
 import { useState } from "react";
 import Picker from 'emoji-picker-react';
-import Tooltip from "@mui/material/Tooltip";
+import { Tooltip } from '@mui/material';
 import { useRef, createRef } from "react";
 import { useEffect } from "react";
 import ImageDialog from "../Components/Dialog/imageDialog";

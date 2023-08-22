@@ -9,8 +9,7 @@ import { RiSettings5Line } from "react-icons/ri"
 import { RiSunLine } from "react-icons/ri"
 import { RiMoonLine } from "react-icons/ri"
 import 'react-tooltip/dist/react-tooltip.css'
-import { Tooltip as ReactTooltip } from 'react-tooltip'
-import Tooltip from "@mui/material/Tooltip";
+import { Tooltip } from '@mui/material';
 
 import Defauluserimg from "../Resources/Images/defaultuser.jpg"
 const Container = styled.div`

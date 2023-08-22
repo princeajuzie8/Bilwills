@@ -7,11 +7,15 @@ import lline from "../Resources/Images/lline.svg";
 import Logo from "../Resources/Images/Logo1.svg";
 import "react-phone-number-input/style.css";
 import PhoneInput from "react-phone-number-input";
-import {  useState  } from "react";
+import {  useState, useEffect  } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useSelector,useDispatch } from "react-redux";
 import { userCreateWithEmail,userCreateWithGoogle,usersLogin,usersLogout } from "../Redux/slice/UserSlice";
+import {TiTick} from "react-icons/ti";
+import {FaTimes} from "react-icons/fa";
 import { signUp } from "../Redux/asyncThunks";
+import CircularProgress from "@mui/material";
+import { Oval } from  "react-loader-spinner";
 import { db } from "../config/firebase/firebase";
 import bcrypt from "bcryptjs"
 import {
@@ -19,7 +23,10 @@ import {
 
 } from "firebase/auth";
 import { Auth } from "../config/firebase/firebase";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc,getDoc } from "firebase/firestore";
+import { collection } from "firebase/firestore";
+import { where, query,onSnapshot } from "firebase/firestore";
+
 
 const Main = styled.div`
   background-color: #fff;
@@ -362,6 +369,10 @@ const {userdata} = useSelector((state)=> state.user)
   const [Phone, setPhone] = useState(null);
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
+  const [profileImg, setProfileImg] = useState(userdata.img)
+  const [isUsernameTaken, setIsUsernameTaken] = useState(false);
+  const [userCresidential, setUserCresidential]= useState(null)
+  const [isLoading, setIsLoading] = useState(false);
 
   let signupbtn = document.getElementById("signUpBtn");
   let popen = document.getElementById("psopen");
@@ -393,7 +404,7 @@ const {userdata} = useSelector((state)=> state.user)
       /^(?!.*\s)(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[~`!@#$%^&*()--+={}\[\]|\\:;"'<>,.?/_₹]).{10,16}$/,
   };
 
-  const signUpValidate = (field, regex) => {
+  const signUpValidate = (field, regex)  => {
     if (regex.test(field.value)) {
       field.className = "valid";
     } else {
@@ -420,11 +431,14 @@ const {userdata} = useSelector((state)=> state.user)
   const HandleCreateWithEmail = async (e) => {
     e.preventDefault();
     try{
-      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
   const  userCresidential = await createUserWithEmailAndPassword(Auth,email,hashedPassword)
 
-  
-   
+
+  setUserCresidential(userCresidential)
+          
       console.log(userCresidential);
       await setDoc(doc(db, "users", userCresidential.user.uid), {
         displayName: username,
@@ -432,7 +446,8 @@ const {userdata} = useSelector((state)=> state.user)
         password: hashedPassword,
         uid: userCresidential.user.uid,
         dob: dob,
-       phone: Phone,
+        phoneNumber: Phone,
+        photoURL: profileImg,
 });
     // await setDoc(doc(db,"users", ),{
     
@@ -446,6 +461,7 @@ const {userdata} = useSelector((state)=> state.user)
             id: userCresidential.user.uid,
             dob: dob,
             phone: Phone,
+            img:profileImg,
           }));
 
       }catch(err){
@@ -454,6 +470,58 @@ const {userdata} = useSelector((state)=> state.user)
 
     
   }
+// Add this helper function 
+// const checkUsernameTaken = async (username) => {
+
+//   const usersRef = collection(db, 'users');
+
+//   const queryn = query(usersRef, where('DisplayName', '==', username));
+
+//   const querySnapshot = await getDoc(queryn);
+
+//   let isTaken = false;
+
+//   querySnapshot.forEach(doc => {
+//     isTaken = true;
+//   });
+
+//   return isTaken;
+
+// }
+
+
+
+useEffect(() => {
+  const checkUsernameAvailability = async () => {
+    if (username.trim() !== '') {
+      setIsLoading(true)
+      const usersRef = collection(db, 'users');
+      const usernameQuery = query(usersRef, where('displayName', '==', username));
+  
+      const unsubscribe = onSnapshot(usernameQuery, (querySnapshot) => {
+          setIsLoading(false);
+        if (!querySnapshot.empty) {
+          setIsUsernameTaken(true);
+          console.log("taken");
+        } else {
+          setIsUsernameTaken(false);
+          console.log('available');
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    } else {
+      setIsUsernameTaken(false);
+    }
+  };
+
+  checkUsernameAvailability();
+}, [username]);
+ 
+
+
 
 
   return (
@@ -533,6 +601,7 @@ const {userdata} = useSelector((state)=> state.user)
                       id="lname"
                       placeholder="@username"
                       value={username}
+                      
                       size={50}
                       maxLength={18}
                       required
@@ -638,6 +707,24 @@ const {userdata} = useSelector((state)=> state.user)
                     onClick={HandleCreateWithEmail}
                   />
                   <div className="bf1">
+                  {isLoading &&  <Oval
+  height={20}
+  width={20}
+  color="#4fa94d"
+  wrapperStyle={{}}
+  wrapperClass=""
+  visible={true}
+  ariaLabel='oval-loading'
+  secondaryColor="#4fa94d"
+  strokeWidth={2}
+  strokeWidthSecondary={2}
+
+/>}
+      {!isLoading && (
+        <p>
+          {isUsernameTaken  ? <FaTimes /> :  <TiTick />}
+        </p>
+      )}
                     <p>
                       * By signing up, you agree to our{" "}
                       <Link to="/terms">Terms of Use </Link>

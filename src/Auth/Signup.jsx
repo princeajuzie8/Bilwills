@@ -15,7 +15,7 @@ import {TiTick} from "react-icons/ti";
 import {FaTimes} from "react-icons/fa";
 import { signUp } from "../Redux/asyncThunks";
 import CircularProgress from "@mui/material";
-import { Oval } from  "react-loader-spinner";
+import { RotatingLines } from  "react-loader-spinner";
 import { db } from "../config/firebase/firebase";
 import bcrypt from "bcryptjs"
 import {
@@ -233,6 +233,19 @@ code {
               flex-direction: row;
               justify-content: space-between;
               padding: 0 1px;
+
+              .inputfile{
+               .sec1{
+                position: relative;
+                .sec2{
+                  position: absolute;
+                  left: 350px;
+                  right: 1px;
+                  top: 30px;
+                  bottom: 5px;
+                }
+               }
+              }
             }
             width: 400px;
             input {
@@ -396,7 +409,7 @@ const {userdata} = useSelector((state)=> state.user)
   const patterns = {
     fullnameregex: /^[a-zA-Z]+ [a-zA-Z]+$/,
     usernameregex:
-      /^[a-zA-Z0-9](_(?!(\.|_))|\.(?!(_|\.))|[a-zA-Z0-9]){6,18}[a-zA-Z0-9]$/,
+    /^(?!.*[_.]{2})[a-zA-Z0-9]([a-zA-Z0-9]*[_\.](?![_.])|[a-zA-Z0-9]){4,16}[a-zA-Z0-9]$/,
     emailregex:
       /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i,
     phoneregex: /^\d{11}$/,
@@ -405,6 +418,7 @@ const {userdata} = useSelector((state)=> state.user)
   };
 
   const signUpValidate = (field, regex)  => {
+    
     if (regex.test(field.value)) {
       field.className = "valid";
     } else {
@@ -416,6 +430,7 @@ const {userdata} = useSelector((state)=> state.user)
       username.length <= 0 ||
       email.length <= 0 ||
       dob.length === null ||
+      // isUsernameTaken ||
       password.length <= 0
     ) {
       signupbtn.style.background = "#efefef";
@@ -434,6 +449,18 @@ const {userdata} = useSelector((state)=> state.user)
 
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
+
+      // const isUsernameValid = patterns.usernameregex.test(username);
+      // if (isUsernameValid) {
+      //   const isTaken = await checkUsernameTaken(username);
+      //   if (isTaken) {
+      //     // Handle username taken scenario here (e.g., show error to the user)
+      //     return;
+      //   }
+      // } else {
+      //   // Handle invalid username scenario here (e.g., show error to the user)
+      //   return;
+      // }
   const  userCresidential = await createUserWithEmailAndPassword(Auth,email,hashedPassword)
 
 
@@ -470,24 +497,7 @@ const {userdata} = useSelector((state)=> state.user)
 
     
   }
-// Add this helper function 
-// const checkUsernameTaken = async (username) => {
 
-//   const usersRef = collection(db, 'users');
-
-//   const queryn = query(usersRef, where('DisplayName', '==', username));
-
-//   const querySnapshot = await getDoc(queryn);
-
-//   let isTaken = false;
-
-//   querySnapshot.forEach(doc => {
-//     isTaken = true;
-//   });
-
-//   return isTaken;
-
-// }
 
 
 
@@ -495,31 +505,38 @@ useEffect(() => {
   const checkUsernameAvailability = async () => {
     if (username.trim() !== '') {
       setIsLoading(true)
-      const usersRef = collection(db, 'users');
-      const usernameQuery = query(usersRef, where('displayName', '==', username));
-  
-      const unsubscribe = onSnapshot(usernameQuery, (querySnapshot) => {
-          setIsLoading(false);
-        if (!querySnapshot.empty) {
-          setIsUsernameTaken(true);
-          console.log("taken");
-        } else {
-          setIsUsernameTaken(false);
-          console.log('available');
-        }
-      });
 
-      return () => {
-        unsubscribe();
-      };
+      const SearchDelay = setTimeout(async ()=>{
+        const usersRef = collection(db, 'users');
+        const usernameQuery = query(usersRef, where('displayName', '==', username));
+    
+        const unsubscribe = onSnapshot(usernameQuery, (querySnapshot) => {
+            setIsLoading(false);
+          if (!querySnapshot.empty) {
+            setIsUsernameTaken(true);
+            console.log("taken");
+          } else {
+            setIsUsernameTaken(false);
+            console.log('available');
+          }
+        });
+        return () => {
+          unsubscribe();
+          clearTimeout(SearchDelay)
+        };
+      },300)
     } else {
       setIsUsernameTaken(false);
+      setIsLoading(false); 
     }
+      
+
   };
 
   checkUsernameAvailability();
 }, [username]);
  
+
 
 
 
@@ -595,13 +612,17 @@ useEffect(() => {
                         signUpValidate(e.target, patterns.fullnameregex)
                       }
                     /> */}
+                    <div className="inputfile">
+
+                   <div className="sec1">
+
                     <input
                       type="text"
                       name="username"
                       id="lname"
                       placeholder="@username"
                       value={username}
-                      
+                      autoComplete="off"
                       size={50}
                       maxLength={18}
                       required
@@ -610,6 +631,33 @@ useEffect(() => {
                         signUpValidate(e.target, patterns.usernameregex)
                       }
                     />{" "}
+                    <div className="sec2">
+  {!isLoading && !isUsernameTaken && username.trim() !== '' && (
+        <TiTick style={{
+          color: "green",
+        }}/>
+      )}
+      {isUsernameTaken && !isLoading  &&  <FaTimes style={{
+          color: "red",
+        }} />}
+
+                  {isLoading &&  <RotatingLines
+  height={20}
+  width={20}
+  color="#4fa94d"
+  wrapperStyle={{}}
+  wrapperClass=""
+  visible={true}
+  ariaLabel='oval-loading'
+  secondaryColor="#4fa94d"
+  strokeWidth={2}
+  strokeWidthSecondary={2}
+
+/>}
+                    </div>
+                   </div>
+
+                    </div>
                   </div>
                   <span>
                     Username must contain alphanumeric and contain 5 - 12
@@ -707,24 +755,9 @@ useEffect(() => {
                     onClick={HandleCreateWithEmail}
                   />
                   <div className="bf1">
-                  {isLoading &&  <Oval
-  height={20}
-  width={20}
-  color="#4fa94d"
-  wrapperStyle={{}}
-  wrapperClass=""
-  visible={true}
-  ariaLabel='oval-loading'
-  secondaryColor="#4fa94d"
-  strokeWidth={2}
-  strokeWidthSecondary={2}
 
-/>}
-      {!isLoading && (
-        <p>
-          {isUsernameTaken  ? <FaTimes /> :  <TiTick />}
-        </p>
-      )}
+    
+     
                     <p>
                       * By signing up, you agree to our{" "}
                       <Link to="/terms">Terms of Use </Link>

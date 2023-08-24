@@ -7,48 +7,60 @@ import lline from "../Resources/Images/lline.svg";
 import Logo from "../Resources/Images/Logo1.svg";
 import "react-phone-number-input/style.css";
 import PhoneInput from "react-phone-number-input";
-import {  useState, useEffect  } from "react";
+import { useState, useEffect } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { useSelector,useDispatch } from "react-redux";
-import { userCreateWithEmail,userCreateWithGoogle,usersLogin,usersLogout } from "../Redux/slice/UserSlice";
-import {TiTick} from "react-icons/ti";
-import {FaTimes} from "react-icons/fa";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  userCreateWithEmail,
+  userCreateWithGoogle,
+  usersLogin,
+  usersLogout,
+} from "../Redux/slice/UserSlice";
+import { TiTick } from "react-icons/ti";
+import { FaTimes } from "react-icons/fa";
 import { signUp } from "../Redux/asyncThunks";
 import CircularProgress from "@mui/material";
-import { RotatingLines } from  "react-loader-spinner";
+import { RotatingLines } from "react-loader-spinner";
 import { db } from "../config/firebase/firebase";
-import bcrypt from "bcryptjs"
-import {
-  createUserWithEmailAndPassword,
-
-} from "firebase/auth";
+import bcrypt from "bcryptjs";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { Auth } from "../config/firebase/firebase";
-import { setDoc, doc,getDoc } from "firebase/firestore";
+import { setDoc, doc, getDoc } from "firebase/firestore";
 import { collection } from "firebase/firestore";
-import { where, query,onSnapshot } from "firebase/firestore";
+import { where, query, onSnapshot } from "firebase/firestore";
+import ReactiveButton from "reactive-button";
+import { isPossiblePhoneNumber } from "react-phone-number-input";
+import {
+  EMAIL_REGEX,
+  PHONE_NUMBER_REGEX,
+  NAME_REGEX,
+  PASSWORD_REGEX,
+  USERNAME_REGEX,
+  DOB_REGEX,
+} from "../utils/RegexUtils";
 
+import toast, { Toaster } from "react-hot-toast";
 
 const Main = styled.div`
   background-color: #fff;
   height: auto;
   margin: 0;
-font-family: 'Manrope';
+  font-family: "Manrope";
 
-body {
-  background: #efefef;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  
-}
+  body {
+    background: #efefef;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+      "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+      "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-};
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+      monospace;
+  }
   .buyeroverall {
     display: grid;
     grid-template-columns: 1.1fr 1.9fr;
@@ -64,24 +76,17 @@ code {
     height: 100vh;
     width: 100%;
 
+    .figure {
+      margin-top: 0px;
 
+      height: 50px;
+      a {
+        // padding-top: 50px;
 
-     
-
-      .figure{
-         margin-top: 0px;
-      
-        height: 50px;
-        a{
-            // padding-top: 50px;
-
-           img{
-          
-          }
-          }
-        
+        img {
         }
-    
+      }
+    }
   }
 
   .bsec2 {
@@ -128,10 +133,10 @@ code {
 
     .Bform {
       * {
-      margin: 0 auto;
-      padding: 0;
-      box-sizing: border-box;
-    }
+        margin: 0 auto;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
       text-align: center;
       margin-top: 10px;
@@ -234,17 +239,17 @@ code {
               justify-content: space-between;
               padding: 0 1px;
 
-              .inputfile{
-               .sec1{
-                position: relative;
-                .sec2{
-                  position: absolute;
-                  left: 350px;
-                  right: 1px;
-                  top: 30px;
-                  bottom: 5px;
+              .inputfile {
+                .sec1 {
+                  position: relative;
+                  .sec2 {
+                    position: absolute;
+                    left: 350px;
+                    right: 1px;
+                    top: 30px;
+                    bottom: 5px;
+                  }
                 }
-               }
               }
             }
             width: 400px;
@@ -273,7 +278,7 @@ code {
             }
 
             .bf1 {
-              margin-top: 14px;
+              margin-top: 30px;
               padding-bottom: 30px;
               align-items: center;
             }
@@ -321,20 +326,25 @@ code {
             }
 
             [type="submit"] {
-              margin-top: 18px;
-              padding: 12px 142px;
+              margin-top: 15px;
+
+            padding-block: 10px;
               outline: none;
               border-radius: 5px;
               font-size: 15px;
               font-weight: 500;
-              color: gray;
-              background-color: #efefef;
+
               cursor: pointer;
+              .content{
+                color: black;
+                font-weight: bold;
+              }
             }
 
             span {
               font-size: 11px;
-              display: none;
+              display: block;
+              color: red;
             }
 
             .password {
@@ -375,22 +385,51 @@ code {
 `;
 
 const SignUp = () => {
-const dispatch = useDispatch()
-const {userdata} = useSelector((state)=> state.user)
-  const [username, setUserName] = useState(userdata.displayName);
+  const dispatch = useDispatch();
+  const { userdata } = useSelector((state) => state.user);
+  const [username, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [Phone, setPhone] = useState(null);
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
-  const [profileImg, setProfileImg] = useState(userdata.img)
+  const [profileImg, setProfileImg] = useState(userdata.img);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
-  const [userCresidential, setUserCresidential]= useState(null)
+  const [userCresidential, setUserCresidential] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidData, setIsValidData] = useState(true);
+  const [universalError, setUniversalError] = useState("");
+  const [state, setState] = useState("idle");
+  const [value, setValue] = useState("");
+
+  const [errorMessages, setErrorMessages] = useState({
+    fullname: "",
+    email: "",
+    username: "",
+    password: "",
+    dob: "",
+  });
 
   let signupbtn = document.getElementById("signUpBtn");
   let popen = document.getElementById("psopen");
   let pclose = document.getElementById("psclose");
   let ptype = document.getElementById("password");
+
+  const getButtonColor = () => {
+    if (
+      !isUsernameTaken &&
+      username.length > 0 &&
+      email.length > 0 &&
+      dob.length > 0 &&
+      password.length > 0 &&
+      Phone &&
+      isValidData
+    ) {
+      return "#7269ef"; // Blue color when all conditions are met
+    } else {
+      return "#efefef"; // Grey color when conditions are not met
+    }
+  };
+  
 
   const passwordopen = () => {
     console.log("clicked me");
@@ -406,138 +445,202 @@ const {userdata} = useSelector((state)=> state.user)
     popen.style.display = "block";
   };
 
-  const patterns = {
-    fullnameregex: /^[a-zA-Z]+ [a-zA-Z]+$/,
-    usernameregex:
-    /^(?!.*[_.]{2})[a-zA-Z0-9]([a-zA-Z0-9]*[_\.](?![_.])|[a-zA-Z0-9]){4,16}[a-zA-Z0-9]$/,
-    emailregex:
-      /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i,
-    phoneregex: /^\d{11}$/,
-    passwordregex:
-      /^(?!.*\s)(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[~`!@#$%^&*()--+={}\[\]|\\:;"'<>,.?/_₹]).{10,16}$/,
-  };
-
-  const signUpValidate = (field, regex)  => {
-    
-    if (regex.test(field.value)) {
-      field.className = "valid";
+  function signUpValidate(fieldName, regex, value, errorMessage) {
+    if (!regex.test(value)) {
+      setUniversalError("");
+      setErrorMessages((prevErrors) => ({
+        ...prevErrors,
+        [fieldName]: errorMessage,
+      }));
+      setIsValidData(false);
     } else {
-      field.className = "invalid";
-    }
+      setErrorMessages((prevErrors) => ({
+        ...prevErrors,
+        [fieldName]: "",
+      }));
+      setIsValidData(true);
 
-    if (
-
-      username.length <= 0 ||
-      email.length <= 0 ||
-      dob.length === null ||
-      // isUsernameTaken ||
-      password.length <= 0
-    ) {
-      signupbtn.style.background = "#efefef";
-      signupbtn.style.color = "gray";
-      signupbtn.setAttribute("disable", true)
-    } else {
-      signupbtn.style.background = "#1b1c31";
-      signupbtn.style.color = "aliceblue";
-      signupbtn.removeAttribute("disable")
+      setUniversalError("");
     }
+  }
+
+  // const signUpValidate = (field, regex)  => {
+
+  //   if (regex.test(field.value)) {
+  //     field.className = "valid";
+  //   } else {
+  //     field.className = "invalid";
+  //   }
+
+  //   if (
+
+  //     username.length <= 0 ||
+  //     email.length <= 0 ||
+  //     dob.length === null ||
+  //     // isUsernameTaken ||
+  //     password.length <= 0
+  //   ) {
+  //     signupbtn.style.background = "#efefef";
+  //     signupbtn.style.color = "gray";
+  //     signupbtn.setAttribute("disable", true)
+  //   } else {
+  //     signupbtn.style.background = "#1b1c31";
+  //     signupbtn.style.color = "aliceblue";
+  //     signupbtn.removeAttribute("disable")
+  //   }
+  // };
+
+
+  
+  const getFirebaseErrorCode = (error) => {
+    if (error.code) {
+      // Split the error message to extract the specific error code
+      const errorCode = error.code.split('/')[1];
+      return errorCode;
+    }
+    return 'Unknown error';
   };
 
   const HandleCreateWithEmail = async (e) => {
     e.preventDefault();
-    try{
+    
+    const allFieldsValid = Object.keys(errorMessages).every(
+      (field) => !errorMessages[field]
+    );
+    setIsValidData(allFieldsValid);
+    if (!allFieldsValid || !username || !email || !password || !Phone || !dob) {
+      const notify = () =>
+        toast.error(`Fields may be empty or invalid`, {
+          duration: 4000,
+          position: "top-right",
+          style: {
+            borderRadius: "10px",
+            background: "#333",
+            padding: "6px 14px",
+            color: "#fff",
+            fontSize: "13px",
+          },
+        });
 
+      notify();
+
+      return;
+    } else {
+    }
+    try {
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
-
-      // const isUsernameValid = patterns.usernameregex.test(username);
-      // if (isUsernameValid) {
-      //   const isTaken = await checkUsernameTaken(username);
-      //   if (isTaken) {
-      //     // Handle username taken scenario here (e.g., show error to the user)
-      //     return;
-      //   }
-      // } else {
-      //   // Handle invalid username scenario here (e.g., show error to the user)
-      //   return;
-      // }
-  const  userCresidential = await createUserWithEmailAndPassword(Auth,email,hashedPassword)
+      setState("loading");
 
 
-  setUserCresidential(userCresidential)
-          
-      console.log(userCresidential);
-      await setDoc(doc(db, "users", userCresidential.user.uid), {
-        displayName: username,
-        email: email,
-        password: hashedPassword,
-        uid: userCresidential.user.uid,
-        dob: dob,
-        phoneNumber: Phone,
-        photoURL: profileImg,
-});
-    // await setDoc(doc(db,"users", ),{
-    
-    // })
-  
+      if (isUsernameTaken === false) {
        
-       dispatch(userCreateWithEmail({
+      
+        const userCresidential = await createUserWithEmailAndPassword(
+          Auth,
+          email,
+          hashedPassword
+        );
+
+        setUserCresidential(userCresidential);
+
+        console.log(userCresidential);
+        await setDoc(doc(db, "users", userCresidential.user.uid), {
+          displayName: username,
+          email: email,
+          password: hashedPassword,
+          uid: userCresidential.user.uid,
+          dob: dob,
+          phoneNumber: Phone,
+          photoURL: profileImg,
+        });
+      
+        // await setDoc(doc(db,"users", ),{
+
+        // })
+
+        dispatch(
+          userCreateWithEmail({
             displayName: username,
             email: email,
             password: hashedPassword,
             id: userCresidential.user.uid,
             dob: dob,
             phone: Phone,
-            img:profileImg,
-          }));
+            img: profileImg,
+          })
+        );
+        let toas =  toast.success('Successfully created! 🚀', {   position: "top-right", duration: 4000});
+        setTimeout(()=>{
+         toast.dismiss(toas)
+          // Navigate("/login");
+        },1000)
+        setTimeout(() => {
+          setState('success');
+        }, 2000);
+      }else{
+        setState("error");
+        toast.error(`username is taken`, {   position: "top-right", duration: 4000});
+       
 
-      }catch(err){
-        console.error(err);
+
       }
 
-    
-  }
+      console.log("username is taken");
+    } catch (error) {
+      console.error(error);
+      setState("error");
+      const notify = () =>
+      toast.error(`${getFirebaseErrorCode(error)}`, {   position: "top-right", duration: 4000});
 
+      notify();
 
-
-
-useEffect(() => {
-  const checkUsernameAvailability = async () => {
-    if (username.trim() !== '') {
-      setIsLoading(true)
-
-      const SearchDelay = setTimeout(async ()=>{
-        const usersRef = collection(db, 'users');
-        const usernameQuery = query(usersRef, where('displayName', '==', username));
-    
-        const unsubscribe = onSnapshot(usernameQuery, (querySnapshot) => {
-            setIsLoading(false);
-          if (!querySnapshot.empty) {
-            setIsUsernameTaken(true);
-            console.log("taken");
-          } else {
-            setIsUsernameTaken(false);
-            console.log('available');
-          }
-        });
-        return () => {
-          unsubscribe();
-          clearTimeout(SearchDelay)
-        };
-      },300)
-    } else {
-      setIsUsernameTaken(false);
-      setIsLoading(false); 
-    }
-      
-
+     
+    } 
   };
 
-  checkUsernameAvailability();
-}, [username]);
+  useEffect(() => {
+    const checkUsernameAvailability = async () => {
+      if (username.trim() !== "") {
+        if (!USERNAME_REGEX.test(username)) return;
+        setIsLoading(true);
+        const SearchDelay = setTimeout(async () => {
+          const usersRef = collection(db, "users");
+          const usernameQuery = query(
+            usersRef,
+            where("displayName", "==", username)
+          );
+
+          const unsubscribe = onSnapshot(usernameQuery, (querySnapshot) => {
+            setIsLoading(false);
+            if (!querySnapshot.empty) {
+              setIsUsernameTaken(true);
+              console.log("taken");
+            } else {
+              setIsUsernameTaken(false);
+              console.log("available");
+            }
+          });
+
+          return () => {
+            unsubscribe();
+            clearTimeout(SearchDelay);
+          };
+        }, 300);
+      } else {
+        setIsUsernameTaken(false);
+        setIsLoading(false);
+      }
+    };
  
+  
 
 
+    checkUsernameAvailability();
+    // const buttonColor = getButtonColor();
+    // signupbtn.style.background = buttonColor;
+    // signupbtn.style.color = buttonColor === "#efefef" ? "gray" : "aliceblue";
+  }, [username]);
 
 
 
@@ -545,16 +648,18 @@ useEffect(() => {
     <Main>
       <div className="buyeroverall">
         <div className="buyersec1 bsec1">
-            <figure>
-
-
-          <Link to="/">
-            {" "}
-         <img src={Logo} alt="" style={{
-          marginLeft: "0px",
-         }}/>
-          </Link>
-            </figure>
+          <figure>
+            <Link to="/">
+              {" "}
+              <img
+                src={Logo}
+                alt=""
+                style={{
+                  marginLeft: "0px",
+                }}
+              />
+            </Link>
+          </figure>
         </div>
 
         <div className="buyersec1 bsec2">
@@ -564,7 +669,6 @@ useEffect(() => {
               <Link to="/login">
                 <span> Login </span>
               </Link>
-              
             </p>
           </div>
 
@@ -578,17 +682,8 @@ useEffect(() => {
 
             <div className="personalform">
               <div className="bregsocials">
-                <img
-                  src={bgoogle}
-                  alt=""
-                  className="bgoogle"
-                
-                />
-                <img
-                  src={bfacebook}
-                  alt=""
-                
-                />
+                <img src={bgoogle} alt="" className="bgoogle" />
+                <img src={bfacebook} alt="" />
               </div>
 
               <div className="orwith">
@@ -598,71 +693,73 @@ useEffect(() => {
               </div>
 
               <div className="loginform">
-                <form action="" className="bregdetails" onSubmit={HandleCreateWithEmail}>
+                <form
+                  action=""
+                  className="bregdetails"
+                  onSubmit={HandleCreateWithEmail}
+                >
                   <div className="a">
-                    {/* <input
-                      type="text"
-                      id="fullname"
-                      placeholder="Fullname"
-                      value={fullname}
-                      size={20}
-                      required
-                      onChange={(e) => setFullName(e.target.value)}
-                      onKeyUp={(e) =>
-                        signUpValidate(e.target, patterns.fullnameregex)
-                      }
-                    /> */}
                     <div className="inputfile">
+                      <div className="sec1">
+                        <input
+                          type="text"
+                          name="username"
+                          id="lname"
+                          placeholder="@username"
+                          value={username}
+                          autoComplete="off"
+                          size={50}
+                          maxLength={18}
+                          required
+                          onChange={(e) => {
+                            setUserName(e.target.value);
+                            signUpValidate(
+                              "username",
+                              USERNAME_REGEX,
+                              e.target.value,
+                              "username start with letter, may include numbers or underscore(_)"
+                            );
+                          }}
+                        />{" "}
+                        <div className="sec2">
+                          {!isLoading &&
+                            !isUsernameTaken &&
+                            username.trim() !== "" && (
+                              <TiTick
+                                style={{
+                                  color: "green",
+                                }}
+                              />
+                            )}
+                          {isUsernameTaken && !isLoading && (
+                            <FaTimes
+                              style={{
+                                color: "red",
+                              }}
+                            />
+                          )}
 
-                   <div className="sec1">
-
-                    <input
-                      type="text"
-                      name="username"
-                      id="lname"
-                      placeholder="@username"
-                      value={username}
-                      autoComplete="off"
-                      size={50}
-                      maxLength={18}
-                      required
-                      onChange={(e) => setUserName(e.target.value)}
-                      onKeyUp={(e) =>
-                        signUpValidate(e.target, patterns.usernameregex)
-                      }
-                    />{" "}
-                    <div className="sec2">
-  {!isLoading && !isUsernameTaken && username.trim() !== '' && (
-        <TiTick style={{
-          color: "green",
-        }}/>
-      )}
-      {isUsernameTaken && !isLoading  &&  <FaTimes style={{
-          color: "red",
-        }} />}
-
-                  {isLoading &&  <RotatingLines
-  height={20}
-  width={20}
-  color="#4fa94d"
-  wrapperStyle={{}}
-  wrapperClass=""
-  visible={true}
-  ariaLabel='oval-loading'
-  secondaryColor="#4fa94d"
-  strokeWidth={2}
-  strokeWidthSecondary={2}
-
-/>}
-                    </div>
-                   </div>
-
+                          {isLoading && (
+                            <RotatingLines
+                              height={20}
+                              width={20}
+                              color="#4fa94d"
+                              wrapperStyle={{}}
+                              wrapperClass=""
+                              visible={true}
+                              ariaLabel="oval-loading"
+                              secondaryColor="#4fa94d"
+                              strokeWidth={2}
+                              strokeWidthSecondary={2}
+                            />
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <span>
-                    Username must contain alphanumeric and contain 5 - 12
-                    characters{" "}
-                  </span>
+                  {errorMessages.username && username && (
+                    <span>{errorMessages.username}</span>
+                  )}
                   <input
                     type="email"
                     name="email"
@@ -671,16 +768,18 @@ useEffect(() => {
                     size={50}
                     value={email}
                     maxLength={60}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyUp={(e) =>
-                      signUpValidate(e.target, patterns.emailregex)
-                    }
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      signUpValidate(
+                        "email",
+                        EMAIL_REGEX,
+                        e.target.value,
+                        "Please enter a valid email address."
+                      );
+                    }}
                     required
                   />{" "}
-                  <span>
-                    Username must contain alphanumeric and contain 5 - 12
-                    characters{" "}
-                  </span>
+                  {errorMessages.email && <span>{errorMessages.email}</span>}
                   <div className="phone">
                     <PhoneInput
                       defaultCountry="US"
@@ -693,6 +792,11 @@ useEffect(() => {
                       size={22}
                       name="phonenumber"
                     />
+                    {!isPossiblePhoneNumber(String(value)) && value ? (
+                      <span>Enter a valid phone</span>
+                    ) : (
+                      ""
+                    )}
                     <input
                       type="date"
                       placeholder="DOB"
@@ -702,13 +806,16 @@ useEffect(() => {
                       max="2006-01-01"
                       onChange={(e) => {
                         setDob(e.target.value);
+                        signUpValidate(
+                          "dob",
+                          DOB_REGEX,
+                          e.target.value,
+                          "Enter a valid date"
+                        );
                       }}
                     />
                   </div>
-                  <span>
-                    Username must contain alphanumeric and contain 5 - 12
-                    characters{" "}
-                  </span>
+                  {errorMessages.dob && <span>{errorMessages.dob}</span>}
                   <div className="password">
                     <input
                       type="password"
@@ -718,10 +825,15 @@ useEffect(() => {
                       placeholder="Password"
                       size={42}
                       required
-                      onChange={(e) => setPassword(e.target.value)}
-                      onKeyUp={(e) =>
-                        signUpValidate(e.target, patterns.passwordregex)
-                      }
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        signUpValidate(
+                          "password",
+                          PASSWORD_REGEX,
+                          e.target.value,
+                          "Password must be 8 characters or more with at least one uppercase letter, one lowercase letter, one digit, and one special character (@#$%^&*!)"
+                        );
+                      }}
                     />{" "}
                     <AiOutlineEyeInvisible
                       size={21}
@@ -734,30 +846,45 @@ useEffect(() => {
                       onClick={passwordclose}
                     />
                   </div>
-                  <span>
-                    Username must contain alphanumeric and contain 5 - 12
-                    characters{" "}
-                  </span>
-                  {/* <div className="signupquest">
-                  <p>Do you want to become a seller </p>
-                   <div className="signupquest2">
-                        <label htmlFor="yes"> Yes </label>
-                        <input type="radio" name="yesorno" value='yes' id="yes" />
-                        <label htmlFor="no"> No </label>
-                        <input type="radio" name="yesorno" value='no' id="no" />
-                    </div> 
-                </div> */}
-                  <input
-                    type="submit"
+                  {errorMessages.password && password && (
+                    <span>{errorMessages.password}</span>
+                  )}
+                  {/* <ReactiveButton
+                  
+                  
+                   
                     name=""
-                    id="signUpBtn"
+                    block={true}
                     value="Create Account"
+                    buttonState={state}
+                   
+                    loadingText="Loading"
+                    successText="Done"
                     onClick={HandleCreateWithEmail}
-                  />
+                    className="loginsubmitbtn"
+                   
+                  /> */}
+                        <ReactiveButton
+                         type="submit"
+                         id="signUpBtn"
+            buttonState={state}
+            onClick={HandleCreateWithEmail}
+            loadingText="Loading"
+            idleText="Submit"
+            successText="Done"
+            rounded
+           
+            style={{
+              background: getButtonColor(),
+              color: getButtonColor() === "#efefef" ? "gray" : "aliceblue",
+            }}
+          
+        />
                   <div className="bf1">
+                    {universalError && (
+                      <span className="errorMessage">{universalError}</span>
+                    )}
 
-    
-     
                     <p>
                       * By signing up, you agree to our{" "}
                       <Link to="/terms">Terms of Use </Link>
@@ -766,12 +893,14 @@ useEffect(() => {
                       <Link to="/privacy">Privacy Policy.</Link>{" "}
                     </p>
                   </div>
+            
                 </form>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <Toaster />
     </Main>
   );
 };

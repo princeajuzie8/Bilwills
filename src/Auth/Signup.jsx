@@ -18,7 +18,7 @@ import {
 } from "../Redux/slice/UserSlice";
 import { TiTick } from "react-icons/ti";
 import { FaTimes } from "react-icons/fa";
-import { signUp } from "../Redux/asyncThunks";
+import {  useAuthContext } from "../Context/Auth";
 import CircularProgress from "@mui/material";
 import { RotatingLines } from "react-loader-spinner";
 import { db } from "../config/firebase/firebase";
@@ -30,6 +30,7 @@ import { collection } from "firebase/firestore";
 import { where, query, onSnapshot } from "firebase/firestore";
 import ReactiveButton from "reactive-button";
 import { isPossiblePhoneNumber } from "react-phone-number-input";
+import { useNavigate } from "react-router-dom";
 import {
   EMAIL_REGEX,
   PHONE_NUMBER_REGEX,
@@ -38,9 +39,8 @@ import {
   USERNAME_REGEX,
   DOB_REGEX,
 } from "../utils/RegexUtils";
-
 import toast, { Toaster } from "react-hot-toast";
-
+import Cookies from 'js-cookie';
 const Main = styled.div`
   background-color: #fff;
   height: auto;
@@ -385,8 +385,12 @@ const Main = styled.div`
 `;
 
 const SignUp = () => {
+  const  {signUp} = useAuthContext()
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.user);
+  const { Authcurrent } = useSelector((state) => state.auth);
+
   const [username, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [Phone, setPhone] = useState(null);
@@ -402,7 +406,6 @@ const SignUp = () => {
   const [value, setValue] = useState("");
 
   const [errorMessages, setErrorMessages] = useState({
-    fullname: "",
     email: "",
     username: "",
     password: "",
@@ -457,6 +460,7 @@ const SignUp = () => {
       setErrorMessages((prevErrors) => ({
         ...prevErrors,
         [fieldName]: "",
+        
       }));
       setIsValidData(true);
 
@@ -490,8 +494,11 @@ const SignUp = () => {
   //   }
   // };
 
+  const CreateWithGoogle = async () =>{
 
-  
+  }
+  console.log( {"name": userdata.displayName})
+ 
   const getFirebaseErrorCode = (error) => {
     if (error.code) {
       // Split the error message to extract the specific error code
@@ -502,6 +509,8 @@ const SignUp = () => {
   };
 
   const HandleCreateWithEmail = async (e) => {
+    const authToken = Cookies.get("authtoken")
+    console.log(authToken)
     e.preventDefault();
     
     const allFieldsValid = Object.keys(errorMessages).every(
@@ -532,19 +541,18 @@ const SignUp = () => {
       const hashedPassword = await bcrypt.hash(password, salt);
       setState("loading");
 
-
       if (isUsernameTaken === false) {
        
       
-        const userCresidential = await createUserWithEmailAndPassword(
-          Auth,
+        const userCresidential  = await  signUp(
+         
           email,
           hashedPassword
         );
 
         setUserCresidential(userCresidential);
-
         console.log(userCresidential);
+       console.log(email)
         await setDoc(doc(db, "users", userCresidential.user.uid), {
           displayName: username,
           email: email,
@@ -555,10 +563,6 @@ const SignUp = () => {
           photoURL: profileImg,
         });
       
-        // await setDoc(doc(db,"users", ),{
-
-        // })
-
         dispatch(
           userCreateWithEmail({
             displayName: username,
@@ -573,11 +577,11 @@ const SignUp = () => {
         let toas =  toast.success('Successfully created! 🚀', {   position: "top-right", duration: 4000});
         setTimeout(()=>{
          toast.dismiss(toas)
-          // Navigate("/login");
+          // navigate("/login");
         },1000)
-        setTimeout(() => {
+    
           setState('success');
-        }, 2000);
+      
       }else{
         setState("error");
         toast.error(`username is taken`, {   position: "top-right", duration: 4000});
@@ -637,9 +641,6 @@ const SignUp = () => {
 
 
     checkUsernameAvailability();
-    // const buttonColor = getButtonColor();
-    // signupbtn.style.background = buttonColor;
-    // signupbtn.style.color = buttonColor === "#efefef" ? "gray" : "aliceblue";
   }, [username]);
 
 
@@ -779,7 +780,7 @@ const SignUp = () => {
                     }}
                     required
                   />{" "}
-                  {errorMessages.email && <span>{errorMessages.email}</span>}
+                  {errorMessages.email && email && <span>{errorMessages.email}</span>}
                   <div className="phone">
                     <PhoneInput
                       defaultCountry="US"

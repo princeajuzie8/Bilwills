@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const initialvalue = {
+const current = {
     user: null,
     email: null,
     password: null,
@@ -8,23 +8,21 @@ const initialvalue = {
 
 export const AuthSlice = createSlice({
    name: "auth",
-   initialState : {
-    initialvalue,
-   },
+   initialState: {
+    Authcurrent: current,
+},
    reducers: {
-      setUser: (state,action) =>{
-        state.initialvalue = action.payload
+      setUser: (state, action) => {
+        state.user = action.payload;
       },
-      setEmaill: (state,action) =>{
-        state.initialvalue = action.payload
+      setEmaill: (state, action) => {
+        state.email = action.payload;
       },
-      setPassword: (state,action) =>{
-        state.initialvalue = action.payload
+      setPassword: (state, action) => {
+        state.password = action.payload;
       }
    }
 })
-
-
 
 export const { setUser, setEmaill, setPassword } = AuthSlice.actions;
 

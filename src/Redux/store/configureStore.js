@@ -41,7 +41,7 @@ const store = createStoreWithMiddleware(rootReducer, {
 
 // Subscribe to state changes and save to sessionStorage
 store.subscribe(() => {
-  const { user, auth } = store.getState();
+  const { user } = store.getState();
   sessionStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
   // sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(auth));
 });

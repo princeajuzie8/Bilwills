@@ -8,7 +8,7 @@ const initialvalue = {
     location: null,
     bio: null,
     dob: null,
-    img: "https://i.pinimg.com/474x/ed/1f/41/ed1f41959e7e9aa7fb0a18b76c6c2755.jpg",
+    photoURL: "https://i.pinimg.com/474x/ed/1f/41/ed1f41959e7e9aa7fb0a18b76c6c2755.jpg",
     id: null,
     phone: "",
 }

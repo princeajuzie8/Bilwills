@@ -7,6 +7,9 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider, 
+  FacebookAuthProvider,
 } from 'firebase/auth';
 import { setUser } from '../Redux/slice/AuthSlice';
 import { createContext, useContext } from 'react';
@@ -35,8 +38,18 @@ export const UserAuthContextProvider = ({ children }) => {
     dispatch(setUser(null));
   };
 
-  // Other functions...
 
+   const GoogleSignin = async () =>{
+    const SignInWithPopop = await new GoogleAuthProvider()
+    dispatch(setUser(SignInWithPopop.user));
+    return signInWithPopup(Auth, SignInWithPopop)
+
+   }
+const FacebookSignin = async ()=>{
+  const FacebookCreidentials = await new FacebookAuthProvider()
+  dispatch(setUser(FacebookCreidentials.user))
+  return signInWithPopup(Auth, FacebookCreidentials)
+}
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(Auth, (currentUser) => {
       dispatch(setUser(currentUser));
@@ -47,7 +60,7 @@ export const UserAuthContextProvider = ({ children }) => {
   }, [dispatch]);
 
   return (
-    <createUserAuthcontext.Provider value={{ signUp, logIn,  logOut,  updateProfile }}>
+    <createUserAuthcontext.Provider value={{ signUp, logIn,  logOut,  updateProfile,GoogleSignin,FacebookSignin }}>
             {children}
         </createUserAuthcontext.Provider>
   )

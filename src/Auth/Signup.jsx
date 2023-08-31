@@ -23,7 +23,7 @@ import CircularProgress from "@mui/material";
 import { RotatingLines } from "react-loader-spinner";
 import { db } from "../config/firebase/firebase";
 import bcrypt from "bcryptjs";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { FacebookAuthProvider } from "firebase/auth";
 import { Auth } from "../config/firebase/firebase";
 import { setDoc, doc, getDoc } from "firebase/firestore";
 import { collection } from "firebase/firestore";
@@ -385,7 +385,7 @@ const Main = styled.div`
 `;
 
 const SignUp = () => {
-  const  {signUp} = useAuthContext()
+  const  {signUp, GoogleSignin,FacebookSignin} = useAuthContext()
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.user);
@@ -396,7 +396,7 @@ const SignUp = () => {
   const [Phone, setPhone] = useState(null);
   const [dob, setDob] = useState("");
   const [password, setPassword] = useState("");
-  const [profileImg, setProfileImg] = useState(userdata.img);
+  const [profileImg, setProfileImg] = useState(userdata.photoURL);
   const [isUsernameTaken, setIsUsernameTaken] = useState(false);
   const [userCresidential, setUserCresidential] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -495,9 +495,96 @@ const SignUp = () => {
   // };
 
   const CreateWithGoogle = async () =>{
+     try {
+       const SignUpGoogle = await GoogleSignin()
+       const googleUser = SignUpGoogle.user;
 
+       if(googleUser){
+
+      console.log(googleUser.photoURL)
+    await setDoc(doc(db, "users", googleUser.uid), {
+      displayName: googleUser.displayName,
+      email: googleUser.email,
+      password: null,
+      uid: googleUser.uid,
+      dob: null,
+      phoneNumber: null,
+      photoURL: googleUser.photoURL,
+    });
+  
+    dispatch(
+      userCreateWithGoogle({
+        displayName: googleUser.displayName,
+        email: googleUser.email,
+        password: null,
+        uid: googleUser.uid,
+        dob: null,
+        phoneNumber: googleUser.Phone,
+        photoURL: googleUser.photoURL,
+      })
+           )
+       }
+
+     } catch (error) {
+      console.log(error)
+      
+     }
   }
-  console.log( {"name": userdata.displayName})
+  const CreateWithFacebook = async () =>{
+     try {
+       const SignUpFacebook = await FacebookSignin()
+       const FacebookUser = SignUpFacebook.user;
+
+       if(FacebookUser){
+
+        const credential = FacebookAuthProvider.credentialFromResult(SignUpFacebook);
+        const accessToken = credential.accessToken;
+        // fetch facebook graph api to get user actual profile picture
+        const pictureResponse = await fetch(`https://graph.facebook.com/${FacebookUser.providerData[0].uid}/picture?type=large&access_token=${accessToken}`);
+        
+        // const pictureBlob = await pictureResponse.blob();
+  
+        // // Create object URL for rendering (not for storing)
+        // const pictureObjectURL = URL.createObjectURL(pictureBlob);
+       setProfileImg(pictureResponse.url);
+       console.log(pictureResponse.url )
+    await setDoc(doc(db, "users", FacebookUser.uid), {
+      displayName: FacebookUser.displayName,
+      email: FacebookUser.email,
+      password: null,
+      uid: FacebookUser.uid,
+      dob: null,
+      phoneNumber: null,
+      photoURL: pictureResponse.url,
+    });
+  
+    dispatch(
+      userCreateWithGoogle({
+        displayName: FacebookUser.displayName,
+        email: FacebookUser.email,
+        password: null,
+        uid: FacebookUser.uid,
+        dob: null,
+        phoneNumber: FacebookUser.Phone,
+        photoURL: pictureResponse.url,
+      })
+           )
+       }
+
+     } catch (error) {
+      console.error(error);
+
+      setState("error");
+      const notify = () =>
+      toast.error(`${getFirebaseErrorCode(error)}`, {   position: "top-right", duration: 4000});
+
+      notify();
+      
+     }
+  }
+  useEffect(() => {
+    console.log({ "name": userdata.displayName });
+  }, [userdata.displayName]);
  
   const getFirebaseErrorCode = (error) => {
     if (error.code) {
@@ -507,6 +594,7 @@ const SignUp = () => {
     }
     return 'Unknown error';
   };
+
 
   const HandleCreateWithEmail = async (e) => {
     const authToken = Cookies.get("authtoken")
@@ -571,7 +659,7 @@ const SignUp = () => {
             id: userCresidential.user.uid,
             dob: dob,
             phone: Phone,
-            img: profileImg,
+            photoURL: profileImg,
           })
         );
         let toas =  toast.success('Successfully created! 🚀', {   position: "top-right", duration: 4000});
@@ -620,6 +708,7 @@ const SignUp = () => {
             if (!querySnapshot.empty) {
               setIsUsernameTaken(true);
               console.log("taken");
+              
             } else {
               setIsUsernameTaken(false);
               console.log("available");
@@ -683,8 +772,10 @@ const SignUp = () => {
 
             <div className="personalform">
               <div className="bregsocials">
-                <img src={bgoogle} alt="" className="bgoogle" />
-                <img src={bfacebook} alt="" />
+                <img src={bgoogle} alt="" className="bgoogle" onClick={()=>{
+                  CreateWithGoogle()
+                }} />
+                <img src={bfacebook} alt="" onClick={()=>{CreateWithFacebook()}}/>
               </div>
 
               <div className="orwith">
@@ -896,6 +987,8 @@ const SignUp = () => {
                   </div>
             
                 </form>
+                <img src={userdata.photoURL} alt="" />
+                <p>{userdata.displayName}</p>
               </div>
             </div>
           </div>

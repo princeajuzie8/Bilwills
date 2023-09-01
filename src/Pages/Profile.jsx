@@ -17,6 +17,7 @@ import Fade from 'react-reveal/Fade';
 import Dropdown from "react-dropdown-animated"
 import { motion } from 'framer-motion';
 import { useEffect } from "react"
+import { useSelector } from "react-redux";
 import { useRef } from "react"
 const Container = styled.div`
     main{
@@ -425,6 +426,7 @@ button.active{
 const Profile = ({ Themetogler }) => {
   const [sub, setSub] = useState(false)
   const [sub1, setSub1] = useState(false)
+  const {userdata} = useSelector((state)=> state.user)
   const Toggle = () => {
     setSub(!sub)
   }
@@ -499,11 +501,11 @@ const Profile = ({ Themetogler }) => {
           </div>
           <div className="user">
             <div className="secc1">
-              <img src={Userimg} alt="" />
+              <img src={userdata.photoURL} alt="" />
             </div>
             <div className="secc2">
               <div className="li">
-                <h5>Patricia Smith</h5>
+                <h5>{userdata.displayName}</h5>
                 <div className="li2">
                   <div className="icon">
                     <RiRecordCircleFill />
@@ -542,11 +544,11 @@ const Profile = ({ Themetogler }) => {
                   <ul>
                     <li>
                       <h4>Name</h4>
-                      <span>Patricia Smith</span>
+                      <span>{userdata.displayName}</span>
                     </li>
                     <li>
                       <h4>Email</h4>
-                      <span>patriciasmith@gmail.com</span>
+                      <span>{userdata.email === null ?  `example@gmail.com` : userdata.email}</span>
                     </li>
                     <li>
                       <h4>Time</h4>

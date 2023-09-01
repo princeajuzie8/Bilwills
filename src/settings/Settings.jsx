@@ -8,6 +8,7 @@ import AccordionItem from "../Components/AccordionItem";
 import 'custom-react-accordion/dist/Accordion.css'
 import { RiEditFill, RiPencilFill, RiUser2Line } from "react-icons/ri";
 import { MdOutlineKeyboardArrowDown } from 'react-icons/md';
+import { useSelector } from "react-redux"
 import { useState } from "react"
 const Container = styled.div`
     main{
@@ -501,6 +502,8 @@ const Settings = ({ Themetogler }) => {
         setOn(prevOn => !prevOn);
     
     };
+    const {userdata} = useSelector((state)=> state.user)
+
     return (
         <Container>
             <main>
@@ -522,11 +525,11 @@ const Settings = ({ Themetogler }) => {
                             <div className="icns">
                                 <RiPencilFill />
                             </div>
-                            <img src={Userimg} alt="" />
+                            <img src={userdata.photoURL} alt="" />
                         </div>
                         <div className="secc2">
                             <div className="li">
-                                <h5>Patricia Smith</h5>
+                                <h5>{userdata.displayName}</h5>
                                 <div className="li2">
                                     <div className="sv">
                                         <span>Available</span>
@@ -558,7 +561,7 @@ const Settings = ({ Themetogler }) => {
                                     <ul>
                                         <li>
                                             <h4>Name</h4>
-                                            <span>Patricia Smith</span>
+                                            <span>{userdata.displayName}</span>
                                             <div className="editicon">
                                                
                                                     <RiEditFill />
@@ -568,7 +571,7 @@ const Settings = ({ Themetogler }) => {
                                         </li>
                                         <li>
                                             <h4>Email</h4>
-                                            <span>patriciasmith@gmail.com</span>
+                                            <span>{userdata.email === null ? "example@gmail.com" : userdata.email}</span>
                                         </li>
                                         <li>
                                             <h4>Time</h4>

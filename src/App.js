@@ -22,7 +22,7 @@ function App() {
   return (
     <ThemeProvider theme={theme === "light" ? lightTheme : darkTheme}>
       <Routes>
-        <Route path="/" element={<Home Themetogler={Themetogler} />} />
+        <Route path="/" element={<Home Themetogler={Themetogler} theme={theme}  />} />
         <Route
           path="/profile"
           element={<Profile Themetogler={Themetogler} />}

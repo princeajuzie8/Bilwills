@@ -8,6 +8,17 @@ import { useState } from "react";
 import Logo from "../Resources/Images/Logo1.svg"
 import { useEffect } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { useSelector,useDispatch } from "react-redux";
+import ReactiveButton from "reactive-button";
+import toast, { Toaster } from "react-hot-toast";
+import {
+  EMAIL_REGEX,
+  PHONE_NUMBER_REGEX,
+  NAME_REGEX,
+  PASSWORD_REGEX,
+  USERNAME_REGEX,
+  DOB_REGEX,
+} from "../utils/RegexUtils";
 
 const Main = styled.body`
   background-color: #fff;
@@ -75,7 +86,7 @@ code {
         margin-left: auto;
         margin-top: 20px;
         margin-right: auto;
-        width: fit-content;
+        max-width: 500px;
         justify-content: center;
         justify-content: center;
         display: flex;
@@ -159,6 +170,7 @@ code {
             border: 1.8px solid red;
           }
 
+         
           .password {
             display: flex;
             flex-direction: row;
@@ -193,7 +205,7 @@ code {
 
         .forgot {
           text-align: start;
-          margin-top: 15px;
+          margin-top: 25px;
           display: flex;
           flex-direction: row;
           justify-content: space-between;
@@ -217,6 +229,7 @@ code {
         }
 
         .logindetails [type="submit"] {
+          margin-block: 15px;
           padding: 12px 175px;
           outline: none;
           border-radius: 5px;
@@ -226,6 +239,11 @@ code {
           background-color: #efefef;
           cursor: pointer;
         }
+        span {
+              font-size: 11px;
+              display: block;
+              color: red;
+            }
       }
     }
 
@@ -266,11 +284,51 @@ const Login = () => {
   const [useremail, setuserEmail] = useState("");
   const [userpassword, setuserPassword] = useState("");
   let loginbtn = document.getElementById("loginbtn");
-
+  const [state, setState] = useState("idle");
   let popen = document.getElementById("psopen");
   let pclose = document.getElementById("psclose");
   let ptype = document.getElementById("password");
+  const {userdata} = useSelector((state)=> state.user)
+  const [isValidData, setIsValidData] = useState(true);
+  const [universalError, setUniversalError] = useState("");
+  const [errorMessages, setErrorMessages] = useState({
+    email: "",
+    username: "",
+    password: "",
+    dob: "",
+  });
 
+  const getButtonColor = () => {
+    if (
+      useremail.length > 0 &&
+      userpassword.length > 0 &&
+    
+      isValidData
+    ) {
+      return "#7269ef"; // Blue color when all conditions are met
+    } else {
+      return "#efefef"; // Grey color when conditions are not met
+    }
+  };
+  function validateLogin(fieldName, regex, value, errorMessage) {
+    if (!regex.test(value)) {
+      setUniversalError("");
+      setErrorMessages((prevErrors) => ({
+        ...prevErrors,
+        [fieldName]: errorMessage,
+      }));
+      setIsValidData(false);
+    } else {
+      setErrorMessages((prevErrors) => ({
+        ...prevErrors,
+        [fieldName]: "",
+        
+      }));
+      setIsValidData(true);
+
+      setUniversalError("");
+    }
+  }
   const passwordopen = () => {
     console.log("clicked me");
     popen.style.display = "none";
@@ -285,31 +343,12 @@ const Login = () => {
     popen.style.display = "block";
   };
 
-  const patterns = {
-    useremailregex:
-      /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i,
-    userpasswordregex:
-      /^(?!.*\s)(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[~`!@#$%^&*()--+={}\[\]|\\:;"'<>,.?/_₹]).{10,16}$/,
-  };
 
-  useEffect(() => {}, [validateLogin]);
+
+  // useEffect(() => {}, [validateLogin]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  function validateLogin(field, regex) {
-    if (regex.test(field.value)) {
-      field.className = "valid";
-    } else {
-      field.className = "invalid";
-    }
-
-    if (useremail.length <= 0 || userpassword.length <= 0) {
-      loginbtn.style.background = "#efefef";
-      loginbtn.style.color = "gray";
-    } else {
-      loginbtn.style.background = "#1b1c31";
-      loginbtn.style.color = "aliceblue";
-    }
-  }
+ 
 
   // function validateLogin(field, regex) {
   //   if (regex.test(field.value)) {
@@ -327,7 +366,33 @@ const Login = () => {
   //   }
   // }
 
+const HandleLogWithEmail =(e)=>{
+  e.preventDefault();
+const allFieldsValid = Object.keys(errorMessages).every(
+  (field) => !errorMessages[field]
+);
+setIsValidData(allFieldsValid);
+if (!allFieldsValid || !useremail || !userpassword ) {
+  const notify = () =>
+    toast.error(`Fields may be empty or invalid`, {
+      duration: 4000,
+      position: "top-right",
+      style: {
+        borderRadius: "10px",
+        background: "#333",
+        padding: "6px 14px",
+        color: "#fff",
+        fontSize: "13px",
+      },
+    });
 
+  notify();
+
+  return;
+} else {
+}
+
+}
  
 
   return (
@@ -349,7 +414,7 @@ const Login = () => {
           <div className="Loginform">
             <div className="loginform">
               <h4>
-                Hello 👋, <span> Welcome Back! </span>
+                Hello 👋,  Welcome Back! 
               </h4>
               <p>Login into your account</p>
             </div>
@@ -386,12 +451,16 @@ const Login = () => {
                 required
                 onChange={(e) => {
                   setuserEmail(e.target.value);
-                }}
-                onKeyUp={(e) => {
-                  validateLogin(e.target, patterns.useremailregex);
+                  validateLogin(
+                    "email",
+                    EMAIL_REGEX,
+                    e.target.value,
+                    "Please enter a valid email address."
+                  );
                 }}
               />{" "}
               <br required />
+              {errorMessages.email && useremail && <span>{errorMessages.email}</span>}
               <div className="password">
                 <input
                   type="password"
@@ -403,9 +472,12 @@ const Login = () => {
                   value={userpassword}
                   onChange={(e) => {
                     setuserPassword(e.target.value);
-                  }}
-                  onKeyUp={(e) => {
-                    validateLogin(e.target, patterns.userpasswordregex);
+                    validateLogin(
+                      "password",
+                      PASSWORD_REGEX,
+                      e.target.value,
+                      "Password must be 8 characters or more with at least one uppercase letter, one lowercase letter, one digit, and one special character (@#$%^&*!)"
+                    );
                   }}
                 />{" "}
                 <AiOutlineEyeInvisible
@@ -415,13 +487,25 @@ const Login = () => {
                 />
                 <AiOutlineEye size={21} id="psclose" onClick={passwordclose} />
               </div>
-              <input
-                type="submit"
-                name=""
-                id="loginbtn"
-                value="login"
-                size={50}
-              />
+              {errorMessages.password && userpassword && (
+                    <span>{errorMessages.password}</span>
+                  )}
+              <ReactiveButton
+                         type="submit"
+                         id="signUpBtn"
+            buttonState={state}
+            onClick={HandleLogWithEmail}
+            loadingText="Loading"
+            idleText="Submit"
+            successText="Done"
+            rounded
+           
+            style={{
+              background: getButtonColor(),
+              color: getButtonColor() === "#efefef" ? "gray" : "aliceblue",
+            }}
+          
+        />
               <div className="forgot">
                 <p>Dont remember your password? </p>
                 <span>
@@ -442,6 +526,7 @@ const Login = () => {
           </Link>
         </div>
       </div>
+      <Toaster />
     </Main>
   );
 };

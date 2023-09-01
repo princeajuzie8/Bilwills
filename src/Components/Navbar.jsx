@@ -9,6 +9,7 @@ import { RiSettings5Line } from "react-icons/ri"
 import { RiSunLine } from "react-icons/ri"
 import { RiMoonLine } from "react-icons/ri"
 import 'react-tooltip/dist/react-tooltip.css'
+import { useSelector } from "react-redux";
 import { Tooltip } from '@mui/material';
 
 import Defauluserimg from "../Resources/Images/defaultuser.jpg"
@@ -95,8 +96,9 @@ color: ${({ theme }) => theme.iconcolors};
 
 const Navbar = ({ Themetogler, theme }) => {
 
-  
+  const {userdata} = useSelector((state)=> state.user)
 
+//   const localtheme = window.localStorage.getItem('theme')
     return (
         <Container>
 
@@ -164,9 +166,10 @@ const Navbar = ({ Themetogler, theme }) => {
                         <Tooltip title="darktheme/lighttheme" arrow placement="right">
                             <li >
 
-                                <RiMoonLine id="open" onClick={Themetogler} /> <RiSunLine id="close" onClick={ Themetogler} />
+                             {theme === "light" ? <RiMoonLine  onClick={Themetogler} /> : <RiSunLine  onClick={ Themetogler} />}
 
                             </li>
+                            
 
                         </Tooltip>
 
@@ -174,9 +177,12 @@ const Navbar = ({ Themetogler, theme }) => {
 
 
                     </ul>
+                    <Tooltip title={userdata.displayName} arrow placement="top">
+
                     <div className="user">
-                        <img src={Defauluserimg} height={30} width={30} alt="" />
+                        <img src={userdata.photoURL} height={30} width={30} alt="" />
                     </div>
+                    </Tooltip>
                 </div>
             </section>
         </Container>

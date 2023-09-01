@@ -33,8 +33,6 @@ import { isPossiblePhoneNumber } from "react-phone-number-input";
 import { useNavigate } from "react-router-dom";
 import {
   EMAIL_REGEX,
-  PHONE_NUMBER_REGEX,
-  NAME_REGEX,
   PASSWORD_REGEX,
   USERNAME_REGEX,
   DOB_REGEX,
@@ -598,7 +596,7 @@ const SignUp = () => {
 
   const HandleCreateWithEmail = async (e) => {
     const authToken = Cookies.get("authtoken")
-    console.log(authToken)
+    // console.log(authToken)
     e.preventDefault();
     
     const allFieldsValid = Object.keys(errorMessages).every(
@@ -987,8 +985,8 @@ const SignUp = () => {
                   </div>
             
                 </form>
-                <img src={userdata.photoURL} alt="" />
-                <p>{userdata.displayName}</p>
+                {/* <img src={userdata.photoURL} alt="" />
+                <p>{userdata.displayName}</p> */}
               </div>
             </div>
           </div>

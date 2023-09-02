@@ -26,12 +26,15 @@ export const UserAuthContextProvider = ({ children }) => {
     dispatch(setUser(userCredential.user));
     return userCredential;
   };
-
-  const logIn = async (email, password) => {
+  const SignIn = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(Auth, email, password);
+    const AuthToken = await userCredential.user.getIdToken();
+    Cookies.set("authtoken", AuthToken, {expires: 7, secure: true})
     dispatch(setUser(userCredential.user));
     return userCredential;
   };
+
+
 
   const logOut = async () => {
     await signOut(Auth);
@@ -60,7 +63,7 @@ const FacebookSignin = async ()=>{
   }, [dispatch]);
 
   return (
-    <createUserAuthcontext.Provider value={{ signUp, logIn,  logOut,  updateProfile,GoogleSignin,FacebookSignin }}>
+    <createUserAuthcontext.Provider value={{ signUp, SignIn,  logOut,  updateProfile,GoogleSignin,FacebookSignin }}>
             {children}
         </createUserAuthcontext.Provider>
   )

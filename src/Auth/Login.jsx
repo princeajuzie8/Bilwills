@@ -10,7 +10,8 @@ import { useEffect } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useSelector,useDispatch } from "react-redux";
 import ReactiveButton from "reactive-button";
-import toast, { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast"
+import { getDocs, doc, collection } from "firebase/firestore";
 import {
   EMAIL_REGEX,
   PHONE_NUMBER_REGEX,
@@ -19,6 +20,10 @@ import {
   USERNAME_REGEX,
   DOB_REGEX,
 } from "../utils/RegexUtils";
+import { useAuthContext } from "../Context/Auth";
+import { db } from "../config/firebase/firebase";
+import bcrypt from "bcryptjs";
+import { where, query, onSnapshot } from "firebase/firestore";
 
 const Main = styled.body`
   background-color: #fff;
@@ -228,17 +233,21 @@ code {
           }
         }
 
-        .logindetails [type="submit"] {
-          margin-block: 15px;
-          padding: 12px 175px;
-          outline: none;
-          border-radius: 5px;
-          font-size: 15px;
-          font-weight: 400;
-          color: gray;
-          background-color: #efefef;
-          cursor: pointer;
-        }
+        [type="submit"] {
+              margin-top: 15px;
+
+            padding-block: 10px;
+              outline: none;
+              border-radius: 5px;
+              font-size: 15px;
+              font-weight: 500;
+
+              cursor: pointer;
+              .content{
+                color: black;
+                font-weight: bold;
+              }
+            }
         span {
               font-size: 11px;
               display: block;
@@ -277,10 +286,14 @@ code {
       }
     }
   }
+  .go3958317564{
+    padding-left: 10px;
+  }
 `;
 
 const Login = () => {
 
+  const {SignIn} = useAuthContext()
   const [useremail, setuserEmail] = useState("");
   const [userpassword, setuserPassword] = useState("");
   let loginbtn = document.getElementById("loginbtn");
@@ -344,53 +357,86 @@ const Login = () => {
   };
 
 
+  const getFirebaseErrorCode = (error) => {
+    if (error.code) {
+      // Split the error message to extract the specific error code
+      const errorCode = error.code.split('/')[1];
+      return errorCode;
+    }
+    return 'Unknown error';
+  };
 
-  // useEffect(() => {}, [validateLogin]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
- 
-
-  // function validateLogin(field, regex) {
-  //   if (regex.test(field.value)) {
-  //     field.className = "valid";
-  //   } else {
-  //     field.className = "invalid";
-  //   }
-
-  //   if (useremail.length <= 0 || userpassword.length <= 0) {
-  //     loginbtn.style.background = "#efefef";
-  //     loginbtn.style.color = "gray";
-  //   } else {
-  //     loginbtn.style.background = "#1b1c31";
-  //     loginbtn.style.color = "aliceblue";
-  //   }
-  // }
-
-const HandleLogWithEmail =(e)=>{
+const HandleLogWithEmail = async (e)=>{
   e.preventDefault();
-const allFieldsValid = Object.keys(errorMessages).every(
-  (field) => !errorMessages[field]
-);
-setIsValidData(allFieldsValid);
-if (!allFieldsValid || !useremail || !userpassword ) {
-  const notify = () =>
-    toast.error(`Fields may be empty or invalid`, {
-      duration: 4000,
-      position: "top-right",
-      style: {
-        borderRadius: "10px",
-        background: "#333",
-        padding: "6px 14px",
-        color: "#fff",
-        fontSize: "13px",
-      },
-    });
+  const allFieldsValid = Object.keys(errorMessages).every(
+    (field) => !errorMessages[field]
+  );
+  setIsValidData(allFieldsValid);
+  if (!allFieldsValid || !useremail || !userpassword ) {
+    const notify = () =>
+    toast.error(`Fields may be empty or invalid`, {  style: {
+      borderRadius: '10px',
+      padding: '6px 14px',
+      fontSize: '13px',
+    },  position: "top-right", duration: 4000}
+    );
 
   notify();
+ 
+  
+    return;
+  } else {
+  }
 
-  return;
-} else {
+  try {
+    setState("loading");
+
+    // const passwordQuery = query(
+    //   collection(db, "users"),
+    //   where("email", "==", useremail) // Assuming you store email in Firestore
+    // );
+    // const userQuerySnapshot = await getDoc(passwordQuery);
+
+    // const userData = userQuerySnapshot.docs[0].data();
+    // const storedHashedPassword = userData.password; // Assuming you store hashed password in Firestore
+
+    // const passwordMatch = await bcrypt.compare(userpassword, storedHashedPassword);
+
+ const Login =   await SignIn(useremail,userpassword)
+
+
+if(Login){
+
+  let toas =  toast.success('logged in successfully! 🚀',  {  style: {
+    borderRadius: '10px',
+    padding: '6px 14px',
+    fontSize: '13px',
+  },  position: "top-right", duration: 4000});
+  setTimeout(()=>{
+   toast.dismiss(toas)
+    // navigate("/login");
+  },1000)
+
+  setState('success');
 }
+  } catch (error) {
+    console.error(error);
+    setState("error");
+    const notify = () =>
+    toast.error(`${getFirebaseErrorCode(error)}`,{  style: {
+      borderRadius: '10px',
+      padding: '6px 14px',
+      fontSize: '13px',
+    },  position: "top-right", duration: 4000});
+
+    notify();
+
+   
+  } 
+
+
+
+
 
 }
  
@@ -440,7 +486,7 @@ if (!allFieldsValid || !useremail || !userpassword ) {
               <img src={lline} alt="" />
             </div>
 
-            <form action="" className="logindetails" >
+            <form action="" className="logindetails"  onSubmit={HandleLogWithEmail}>
               <input
                 type="email"
                 name=""

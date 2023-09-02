@@ -492,16 +492,24 @@ const SignUp = () => {
   //   }
   // };
 
+
+
+
   const CreateWithGoogle = async () =>{
      try {
        const SignUpGoogle = await GoogleSignin()
        const googleUser = SignUpGoogle.user;
-
-       if(googleUser){
-
-      console.log(googleUser.photoURL)
+  
+       if(googleUser ){
+          const originalDisplayName = googleUser.displayName || '';
+        const cleanedDisplayName = originalDisplayName.replace(/[^a-zA-Z\s]/g, '');
+  
+        // Replace consecutive spaces with an empty string
+        const trimmedDisplayName = cleanedDisplayName.replace(/\s+/g, '')
+  
+        console.log('Cleaned displayName:', trimmedDisplayName);
     await setDoc(doc(db, "users", googleUser.uid), {
-      displayName: googleUser.displayName,
+      displayName: trimmedDisplayName,
       email: googleUser.email,
       password: null,
       uid: googleUser.uid,
@@ -512,7 +520,7 @@ const SignUp = () => {
   
     dispatch(
       userCreateWithGoogle({
-        displayName: googleUser.displayName,
+        displayName: trimmedDisplayName,
         email: googleUser.email,
         password: null,
         uid: googleUser.uid,
@@ -543,11 +551,16 @@ const SignUp = () => {
         // const pictureBlob = await pictureResponse.blob();
   
         // // Create object URL for rendering (not for storing)
+        const originalDisplayName = FacebookUser.displayName || '';
+        const cleanedDisplayName = originalDisplayName.replace(/[^a-zA-Z\s]/g, '');
+  
+        // Replace consecutive spaces with an empty string
+        const trimmedDisplayName = cleanedDisplayName.replace(/\s+/g, '')
         // const pictureObjectURL = URL.createObjectURL(pictureBlob);
        setProfileImg(pictureResponse.url);
        console.log(pictureResponse.url )
     await setDoc(doc(db, "users", FacebookUser.uid), {
-      displayName: FacebookUser.displayName,
+      displayName:trimmedDisplayName,
       email: FacebookUser.email,
       password: null,
       uid: FacebookUser.uid,
@@ -558,7 +571,7 @@ const SignUp = () => {
   
     dispatch(
       userCreateWithGoogle({
-        displayName: FacebookUser.displayName,
+        displayName: trimmedDisplayName,
         email: FacebookUser.email,
         password: null,
         uid: FacebookUser.uid,
@@ -605,17 +618,8 @@ const SignUp = () => {
     setIsValidData(allFieldsValid);
     if (!allFieldsValid || !username || !email || !password || !Phone || !dob) {
       const notify = () =>
-        toast.error(`Fields may be empty or invalid`, {
-          duration: 4000,
-          position: "top-right",
-          style: {
-            borderRadius: "10px",
-            background: "#333",
-            padding: "6px 14px",
-            color: "#fff",
-            fontSize: "13px",
-          },
-        });
+        toast.error(`Fields may be empty or invalid`, {   position: "top-right", duration: 4000}
+        );
 
       notify();
 
@@ -623,8 +627,6 @@ const SignUp = () => {
     } else {
     }
     try {
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
       setState("loading");
 
       if (isUsernameTaken === false) {
@@ -633,7 +635,7 @@ const SignUp = () => {
         const userCresidential  = await  signUp(
          
           email,
-          hashedPassword
+          password
         );
 
         setUserCresidential(userCresidential);
@@ -642,7 +644,7 @@ const SignUp = () => {
         await setDoc(doc(db, "users", userCresidential.user.uid), {
           displayName: username,
           email: email,
-          password: hashedPassword,
+          password: password,
           uid: userCresidential.user.uid,
           dob: dob,
           phoneNumber: Phone,
@@ -653,7 +655,7 @@ const SignUp = () => {
           userCreateWithEmail({
             displayName: username,
             email: email,
-            password: hashedPassword,
+            password: password,
             id: userCresidential.user.uid,
             dob: dob,
             phone: Phone,

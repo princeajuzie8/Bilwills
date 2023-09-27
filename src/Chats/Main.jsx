@@ -95,7 +95,7 @@ const Main = ({ theme, Themetogler }) => {
       <main>
         <div className="navbar">
 
-          <Navbar Themetogler={Themetogler} />
+          <Navbar Themetogler={Themetogler} theme={theme} />
         </div>
         <div className="chats">
           <Leftsidebar />

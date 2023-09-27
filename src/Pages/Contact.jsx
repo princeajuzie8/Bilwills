@@ -221,7 +221,7 @@ const Container = styled.div`
     }
     }
 `
-const Contact = ({ Themetogler }) => {
+const Contact = ({ Themetogler, theme  }) => {
   const [sub1, setSub1] = useState(false)
   const toggleRef1 = useRef(null);
   const Toggle1 = () => {
@@ -245,7 +245,7 @@ const Contact = ({ Themetogler }) => {
     <Container>
       <main>
         <div className="navbar">
-          <Navbar Themetogler={Themetogler} />
+          <Navbar Themetogler={Themetogler} theme={theme} />
         </div>
         <div className="chat">
           <div className="chats">

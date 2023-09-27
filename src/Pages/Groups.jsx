@@ -271,12 +271,12 @@ const Container = styled.div`
     }
     }
 `
-const Groups = ({ Themetogler }) => {
+const Groups = ({ Themetogler, theme }) => {
     return (
         <Container>
             <main>
                 <div className="navbar">
-                    <Navbar Themetogler={Themetogler} />
+                    <Navbar Themetogler={Themetogler}  theme={theme}/>
                 </div>
                 <div className="chats">
                     <div className="general">

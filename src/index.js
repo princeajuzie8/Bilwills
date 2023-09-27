@@ -6,11 +6,17 @@ import App from './App';
 import { BrowserRouter as Router } from "react-router-dom";
 import store from './Redux/store/configureStore';
 import { Provider } from 'react-redux';
+import { storageSession } from './Redux/store/StorageSession';
+import UserSlice from './Redux/slice/UserSlice';
 
 import { UserAuthContextProvider } from './Context/Auth';
 const root = ReactDOM.createRoot(document.getElementById('root'));
+// Load user data from session storage on app initialization
+
+
 
 root.render(
+  
   <React.StrictMode>
 
 

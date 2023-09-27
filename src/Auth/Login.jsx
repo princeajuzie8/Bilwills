@@ -11,21 +11,23 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useSelector,useDispatch } from "react-redux";
 import ReactiveButton from "reactive-button";
 import toast, { Toaster } from "react-hot-toast"
-import { getDocs, doc, collection } from "firebase/firestore";
+import { getDocs, doc, collection, getDoc, setDoc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
+import { FacebookAuthProvider } from "firebase/auth";
 import {
   EMAIL_REGEX,
-  PHONE_NUMBER_REGEX,
-  NAME_REGEX,
   PASSWORD_REGEX,
-  USERNAME_REGEX,
-  DOB_REGEX,
 } from "../utils/RegexUtils";
 import { useAuthContext } from "../Context/Auth";
 import { db } from "../config/firebase/firebase";
 import bcrypt from "bcryptjs";
 import { where, query, onSnapshot } from "firebase/firestore";
+import { fetchUserDataFromFirestore } from "../Redux/persist";
+import { Auth } from "../config/firebase/firebase";
+import { setUser } from "../Redux/slice/AuthSlice";
+import { usersLogin } from "../Redux/slice/UserSlice";
 
-const Main = styled.body`
+const Main = styled.div`
   background-color: #fff;
   * {
       margin: 0 auto;
@@ -293,16 +295,18 @@ code {
 
 const Login = () => {
 
-  const {SignIn} = useAuthContext()
+const navigate = useNavigate()
+  const {SignIn,GoogleSignin,FacebookSignin,updateUserInfo, userInfo,loading,setLoading} = useAuthContext()
   const [useremail, setuserEmail] = useState("");
   const [userpassword, setuserPassword] = useState("");
+  const dispatch = useDispatch()
   let loginbtn = document.getElementById("loginbtn");
   const [state, setState] = useState("idle");
   let popen = document.getElementById("psopen");
   let pclose = document.getElementById("psclose");
   let ptype = document.getElementById("password");
-  const {userdata} = useSelector((state)=> state.user)
   const [isValidData, setIsValidData] = useState(true);
+  const { userdata } = useSelector((state) => state.user);
   const [universalError, setUniversalError] = useState("");
   const [errorMessages, setErrorMessages] = useState({
     email: "",
@@ -366,80 +370,233 @@ const Login = () => {
     return 'Unknown error';
   };
 
-const HandleLogWithEmail = async (e)=>{
-  e.preventDefault();
-  const allFieldsValid = Object.keys(errorMessages).every(
-    (field) => !errorMessages[field]
-  );
-  setIsValidData(allFieldsValid);
-  if (!allFieldsValid || !useremail || !userpassword ) {
-    const notify = () =>
-    toast.error(`Fields may be empty or invalid`, {  style: {
-      borderRadius: '10px',
-      padding: '6px 14px',
-      fontSize: '13px',
-    },  position: "top-right", duration: 4000}
-    );
-
-  notify();
- 
+  console.log("userinfo", userInfo);
   
-    return;
-  } else {
-  }
+  const HandleLogWithEmail = async (e) => {
+    e.preventDefault();
+    const allFieldsValid = Object.keys(errorMessages).every(
+      (field) => !errorMessages[field]
+    );
+    setIsValidData(allFieldsValid);
+    if (!allFieldsValid || !useremail || !userpassword) {
+      const notify = () =>
+        toast.error(`Fields may be empty or invalid`, {
+          style: {
+            borderRadius: '10px',
+            padding: '6px 14px',
+            fontSize: '13px',
+          },
+          position: 'top-right',
+          duration: 4000,
+        });
+  
+      notify();
+      return;
+    }
+  
+    try {
+      setState('loading');
+  
+      // Sign in the user using Firebase Authentication
+      await SignIn( useremail, userpassword);
+  
+      // Fetch user data from Firestore based on the user's UID (assuming user UID is available in auth.currentUser)
+      const userDocRef = doc(db, 'users', Auth.currentUser.uid);
+      const userDocSnapshot = await getDoc(userDocRef);
+      console.log("snapshort",userDocSnapshot );
+  
+      if (userDocSnapshot.exists()) {
+        const userData = userDocSnapshot.data();
+       
+        // Update user info (replace this with your actual function)
+        dispatch(
+          usersLogin({
+            displayName: userData.displayName,
+            email: userData.email,
+            id: userData.uid,
+            dob: userData.dob,
+            phone:userData.phone,
+            photoURL: userData.photoURL,
+          })
+        );
+        updateUserInfo(userData)
+        console.log("userinfo", userInfo);
+        console.log("userdata fire", userData);
+  
+        let toastId = toast.success('Logged in successfully! 🚀', {
+          style: {
+            borderRadius: '10px',
+            padding: '6px 14px',
+            fontSize: '13px',
+          },
+          position: 'top-right',
+          duration: 4000,
+        });
+  
+        setTimeout(() => {
+          toast.dismiss(toastId);
+          navigate('/');
+        }, 1000);
+  
+        setState('success');
+      }
+    } catch (error) {
+      console.error(error);
+      setState('error');
+  
+      const notify = () =>
+        toast.error(`${getFirebaseErrorCode(error)}`, {
+          style: {
+            borderRadius: '10px',
+            padding: '6px 14px',
+            fontSize: '13px',
+          },
+          position: 'top-right',
+          duration: 4000,
+        });
+  
+      notify();
+    }
+  };
+  
+ const CreateWithGoogle = async (e) =>{
+  e.preventDefault();
 
   try {
-    setState("loading");
+    const SignUpGoogle = await GoogleSignin();
+    const googleUser = SignUpGoogle.user;
+   
+    if (googleUser) {
+      const originalDisplayName = googleUser.displayName || "";
+      const cleanedDisplayName = originalDisplayName.replace(
+        /[^a-zA-Z\s]/g,
+        ""
+      );
 
-    // const passwordQuery = query(
-    //   collection(db, "users"),
-    //   where("email", "==", useremail) // Assuming you store email in Firestore
-    // );
-    // const userQuerySnapshot = await getDoc(passwordQuery);
+      // Replace consecutive spaces with an empty string
+      const trimmedDisplayName = cleanedDisplayName.replace(/\s+/g, "");
 
-    // const userData = userQuerySnapshot.docs[0].data();
-    // const storedHashedPassword = userData.password; // Assuming you store hashed password in Firestore
+      console.log("Cleaned displayName:", trimmedDisplayName);
+      const timestamp = new Date(); // Convert Firestore timestamp to a JavaScript Date object
+      const formattedDate = `${timestamp.getMonth() + 1}/${timestamp.getDate()}/${timestamp.getFullYear()}`;
+      await setDoc(doc(db, "users", googleUser.uid), {
+        displayName: trimmedDisplayName,
+        email: googleUser.email,
+        uid: googleUser.uid,
+        dob: null,
+        phoneNumber: null,
+        photoURL: googleUser.photoURL,
+        createdAt: formattedDate,
+      });
+      await setDoc(doc(db, "userChats", googleUser.uid), {
+          
+      })
 
-    // const passwordMatch = await bcrypt.compare(userpassword, storedHashedPassword);
+      dispatch(
+        usersLogin({
+          displayName: trimmedDisplayName,
+          email: googleUser.email,
+          uid: googleUser.uid,
+          dob: null,
+          phoneNumber: googleUser.Phone,
+          photoURL: googleUser.photoURL,
+          createdAt: formattedDate,
+        })
+      );
+      // updateUserInfo(userdata);
+      let toas = toast.success("Successfully created! 🚀", {
+        position: "top-right",
+        duration: 4000,
+      });
+      setTimeout(() => {
+        toast.dismiss(toas);
+        navigate("/ ");
+      }, 1000);
+    }
+  }catch (error) {
+      console.log(error)
+      toast.error(`${getFirebaseErrorCode(error)}`,{  style: {
+        borderRadius: '10px',
+        padding: '6px 14px',
+        fontSize: '13px',
+      },  position: "top-right", duration: 4000});
+  
+     }
+  }
+ const LogWithFacebook = async (e) =>{
+  e.preventDefault();
+  try {
+    const SignUpFacebook = await FacebookSignin();
+    const FacebookUser = SignUpFacebook.user;
 
- const Login =   await SignIn(useremail,userpassword)
+    if (FacebookUser) {
+      const credential =
+        FacebookAuthProvider.credentialFromResult(SignUpFacebook);
+      const accessToken = credential.accessToken;
+      // fetch facebook graph api to get user actual profile picture
+      const pictureResponse = await fetch(
+        `https://graph.facebook.com/${FacebookUser.providerData[0].uid}/picture?type=large&access_token=${accessToken}`
+      );
 
+      // const pictureBlob = await pictureResponse.blob();
 
-if(Login){
+      // // Create object URL for rendering (not for storing)
+      const originalDisplayName = FacebookUser.displayName || "";
+      const cleanedDisplayName = originalDisplayName.replace(
+        /[^a-zA-Z\s]/g,
+        ""
+      );
 
-  let toas =  toast.success('logged in successfully! 🚀',  {  style: {
-    borderRadius: '10px',
-    padding: '6px 14px',
-    fontSize: '13px',
-  },  position: "top-right", duration: 4000});
-  setTimeout(()=>{
-   toast.dismiss(toas)
-    // navigate("/login");
-  },1000)
-
-  setState('success');
-}
-  } catch (error) {
-    console.error(error);
-    setState("error");
-    const notify = () =>
+      // Replace consecutive spaces with an empty string
+      const trimmedDisplayName = cleanedDisplayName.replace(/\s+/g, "");
+      // const pictureObjectURL = URL.createObjectURL(pictureBlob);
+   
+      const timestamp = new Date(); // Convert Firestore timestamp to a JavaScript Date object
+      const formattedDate = `${timestamp.getMonth() + 1}/${timestamp.getDate()}/${timestamp.getFullYear()}`;
+      await setDoc(doc(db, "users", FacebookUser.uid), {
+        displayName: trimmedDisplayName,
+        email: FacebookUser.email,
+        uid: FacebookUser.uid,
+        dob: null,
+        phoneNumber: null,
+        photoURL: pictureResponse.url,
+        createdAt: formattedDate,
+      });
+      // updateUserInfo(userdata);
+      await setDoc(doc(db, "userChats", FacebookUser.uid), {
+          
+      })
+      dispatch(
+        usersLogin({
+          displayName: trimmedDisplayName,
+          email: FacebookUser.email,
+          uid: FacebookUser.uid,
+          dob: null,
+          phoneNumber: FacebookUser.Phone,
+          photoURL: pictureResponse.url,
+          createdAt: formattedDate,
+        })
+      );
+      let toas = toast.success("Successfully created! 🚀", {
+        position: "top-right",
+        duration: 4000,
+      });
+      setTimeout(() => {
+        toast.dismiss(toas);
+        navigate("/login");
+      }, 1000);
+    }
+  } catch (error){
     toast.error(`${getFirebaseErrorCode(error)}`,{  style: {
       borderRadius: '10px',
       padding: '6px 14px',
       fontSize: '13px',
     },  position: "top-right", duration: 4000});
 
-    notify();
-
-   
-  } 
+  }
 
 
-
-
-
-}
- 
+ }
 
   return (
     <Main>
@@ -465,18 +622,18 @@ if(Login){
               <p>Login into your account</p>
             </div>
 
-            <div className="loginsocials">
+            <div className="loginsocials" >
               <img
                 src={lgoogle}
                 alt=""
                 className="lgoogle"
-           
+                onClick={CreateWithGoogle}
               />
               <img
                 src={lfacebook}
                 alt=""
                 className="lfacebook"
-         
+               onClick={LogWithFacebook}
               />
             </div>
 

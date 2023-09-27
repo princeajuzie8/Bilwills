@@ -19,6 +19,9 @@ import { motion } from 'framer-motion';
 import { useEffect } from "react"
 import { useSelector } from "react-redux";
 import { useRef } from "react"
+import { useAuthContext } from "../Context/Auth";
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
 const Container = styled.div`
     main{
       display: grid;
@@ -423,16 +426,20 @@ button.active{
 
     }
 `
-const Profile = ({ Themetogler }) => {
+const Profile = ({ Themetogler, theme }) => {
+const {userInfo,currentUser, loading,logOut} = useAuthContext()
   const [sub, setSub] = useState(false)
   const [sub1, setSub1] = useState(false)
   const {userdata} = useSelector((state)=> state.user)
+  const {Authcurrent} = useSelector((state)=> state.auth)
+
   const Toggle = () => {
     setSub(!sub)
   }
   const Toggle1 = () => {
     setSub1(!sub1)
   }
+  console.log(currentUser)
   const toggleRef = useRef(null);
   useEffect(() => {
     const Handleclickoutside = (event) => {
@@ -464,13 +471,14 @@ const Profile = ({ Themetogler }) => {
     };
   }, [toggleRef1])
 
-
+  
+ 
   return (
     <Container >
 
       <main >
         <div className="navbar">
-          <Navbar Themetogler={Themetogler} />
+          <Navbar Themetogler={Themetogler} theme={theme} />
         </div>
         <div className="chats">
           <div className="head">
@@ -501,11 +509,21 @@ const Profile = ({ Themetogler }) => {
           </div>
           <div className="user">
             <div className="secc1">
-              <img src={userdata.photoURL} alt="" />
+              {loading ? 
+                  <Skeleton
+                  circle
+                  height={92}
+                  containerClassName="avatar-skeleton"
+                  width={92}
+              />
+            :  <img src={ userInfo && userInfo.photoURL} alt="" />  }
+      
+         
             </div>
             <div className="secc2">
               <div className="li">
-                <h5>{userdata.displayName}</h5>
+               
+                   <h5>  {loading ? <Skeleton width={120} /> : userInfo &&  userInfo.displayName}</h5> 
                 <div className="li2">
                   <div className="icon">
                     <RiRecordCircleFill />
@@ -544,15 +562,15 @@ const Profile = ({ Themetogler }) => {
                   <ul>
                     <li>
                       <h4>Name</h4>
-                      <span>{userdata.displayName}</span>
+                      <span>{userInfo.displayName}</span>
                     </li>
                     <li>
                       <h4>Email</h4>
-                      <span>{userdata.email === null ?  `example@gmail.com` : userdata.email}</span>
+                      <span>{loading ? <Skeleton width={200} /> : userInfo.email === null ?  `example@gmail.com` : userInfo.email}</span>
                     </li>
                     <li>
-                      <h4>Time</h4>
-                      <span>11:40 AM</span>
+                      <h4>createdAt</h4>
+                      <span>{loading ? <Skeleton width={90} /> : userInfo.createdAt}</span>
                     </li>
                     <li>
                       <h4>Location</h4>
@@ -644,6 +662,7 @@ const Profile = ({ Themetogler }) => {
 
                 ]} />
               </AccordionWrapper>
+              <button onClick={logOut}>logout</button>
             </div>
 
           </div>

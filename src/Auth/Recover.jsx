@@ -1,6 +1,12 @@
 import { Link } from "react-router-dom";
 import styled from "styled-components";
-import Logo from "../Resources/Images/Logo1.svg"
+import Logo from "../Resources/Images/Logo1.svg";
+import { useAuthContext } from "../Context/Auth";
+import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
+import { EMAIL_REGEX } from "../utils/RegexUtils";
+import ReactiveButton from "reactive-button";
+import { useNavigate } from "react-router-dom";
 const Container = styled.div`
   display: flex;
   flex-direction: column;
@@ -8,25 +14,24 @@ const Container = styled.div`
   justify-content: center;
   text-align: center;
   * {
-      margin: 0 auto;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+  }
   body {
-  background: #efefef;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  
-}
+    background: #efefef;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+      "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+      "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-};
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+      monospace;
+  }
 
   .logo {
     margin-top: 50px;
@@ -41,8 +46,8 @@ code {
       margin-bottom: 35px;
       display: flex;
       align-items: center;
-     
-      img{
+
+      img {
         height: 45px;
       }
 
@@ -56,7 +61,7 @@ code {
     margin-top: 10px;
     padding: 80px 100px;
     border: none;
-    background-color: white;
+    background-color: #f7f9fa;
     border-radius: 5px;
 
     text-align: center;
@@ -94,13 +99,26 @@ code {
         background-color: transparent;
         margin-bottom: 10px;
       }
-      .submit {
-        margin-top: 10px;
-        color: white;
-        background-color: #7269ef;
-        padding: 12px 130px;
-        cursor: pointer;
-      }
+     #signUpBtn {
+              margin-top: 15px;
+
+            padding-block: 10px;
+              outline: none;
+              border-radius: 5px;
+              font-size: 15px;
+              font-weight: 500;
+
+              cursor: pointer;
+            }
+            .content{
+              color: black;
+              font-weight: bold;
+            }
+            span {
+              font-size: 11px;
+              display: block;
+              color: red;
+            }
       .signup {
         margin-top: 5%;
         align-items: center;
@@ -137,18 +155,122 @@ code {
       }
     }
   }
+  .go3958317564 {
+    padding-left: 10px;
+  }
 `;
 const Recover = () => {
+  const { ResetPassword } = useAuthContext();
+  const [email, setEmail] = useState("");
+  const [isValidData, setIsValidData] = useState(true);
+  const [universalError, setUniversalError] = useState("");
+  const [errorMessages, setErrorMessages] = useState({
+    email: "",
+  });
+  const [state, setState] = useState("idle");
+
+  const getButtonColor = () => {
+    if (email.length > 0 && isValidData) {
+      return "#7269ef"; // Blue color when all conditions are met
+    } else {
+      return "#efefef"; // Grey color when conditions are not met
+    }
+  };
+
+  function validateLogin(fieldName, regex, value, errorMessage) {
+    if (!regex.test(value)) {
+      setUniversalError("");
+      setErrorMessages((prevErrors) => ({
+        ...prevErrors,
+        [fieldName]: errorMessage,
+      }));
+      setIsValidData(false);
+    } else {
+      setErrorMessages((prevErrors) => ({
+        ...prevErrors,
+        [fieldName]: "",
+        
+      }));
+      setIsValidData(true);
+
+      setUniversalError("");
+    }
+  }
+
+  const navigate = useNavigate();
+  const getFirebaseError = (error) => {
+    if (error.code) {
+      const errorCode = error.code.split("/")[1];
+      return errorCode;
+    }
+    return "unknown error";
+  };
+  const HandleReset = async (e) => {
+    e.preventDefault();
+    const allFieldsValid = Object.keys(errorMessages).every(
+      (field) => !errorMessages[field]
+    );
+    setIsValidData(allFieldsValid);
+    if (!allFieldsValid || !email  ) {
+      const notify = () =>
+      toast.error(`Fields may be empty or invalid`, {  style: {
+        borderRadius: '10px',
+        padding: '6px 14px',
+        fontSize: '13px',
+      },  position: "top-right", duration: 4000}
+      );
+  
+    notify();
+   
+    
+      return;
+    } else {
+    }
+    setState("loading"); 
+    try {
+     await ResetPassword(email);
+     const taoster = toast.success(
+       `a Reset Password link has been send to this ${email}`,
+       {
+         style: {
+           borderRadius: "10px",
+           padding: "6px 14px",
+           fontSize: "13px",
+         },
+         position: "top-right",
+         duration: 4000,
+       }
+     );
+     setState('success');
+
+     setTimeout(() => {
+       toast.dismiss(taoster);
+       navigate("/login");
+     }, 1000);
+     
+    } catch (error) {
+      toast.error(`${getFirebaseError(error)}`, {
+        style: {
+          borderRadius: "10px",
+          padding: "6px 14px",
+          fontSize: "13px",
+        },
+        position: "top-right",
+        duration: 4000,
+      });
+      console.log(error);
+      setState("error");
+    }
+  };
+  const date = new Date().getFullYear();
   return (
     <Container>
+      <Toaster />
       <div className="general">
         <div className="logo">
-        
-            <Link to="/">
-              <img src={Logo} alt="" />
-             
-            </Link>
-          
+          <Link to="/">
+            <img src={Logo} alt="" />
+          </Link>
         </div>
 
         <div className="background">
@@ -163,23 +285,41 @@ const Recover = () => {
           </div>
 
           <div className="form">
-            <form action="">
+            <form action="" onSubmit={HandleReset}>
               <br />
               <input
                 type="email"
                 color="black"
                 name=""
                 id="name"
-                required
                 size={40}
                 placeholder="Email"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  validateLogin(
+                    "email",
+                    EMAIL_REGEX,
+                    e.target.value,
+                    "Please enter a valid email address."
+                  );
+                }}
               />
               <br />
-              <input
+              {errorMessages.email && email && <span>{errorMessages.email}</span>}
+              <br />
+              <ReactiveButton
                 type="submit"
-                value="Continue"
-                className="submit"
-                size={100}
+                id="signUpBtn"
+                buttonState={state}
+                onClick={HandleReset}
+                loadingText="Loading"
+                idleText="Submit"
+                successText="Done"
+                rounded
+                style={{
+                  background: getButtonColor(),
+                  color: getButtonColor() === "#efefef" ? "gray" : "aliceblue",
+                }}
               />
             </form>
             <div className="signup">
@@ -190,7 +330,7 @@ const Recover = () => {
           </div>
         </div>
         <div className="footer">
-          <p>&copy;2023 BILWILLS.</p>
+          <p>&copy;{date} BILWILLS.</p>
           <p>
             <a href="helpcenter">Help Center</a>
           </p>

@@ -12,38 +12,72 @@ import SignUp from "./Auth/Signup";
 import Login from "./Auth/Login";
 import Recover from "./Auth/Recover";
 import ConfirmPassword from "./Auth/ConfirmPassword";
+import Proctedroute from "./proctedRoute/Proctedroute";
+import NoInternet from "./utils/NoInternet";
+import GenLoading from "./utils/GenLoading";
 function App() {
- const [theme, setTheme] = useDarkMode();
+  const [theme, setTheme] = useDarkMode();
 
- const Themetogler = () => {
-   theme === "light" ? setTheme("dark") : setTheme("light");
- };
-  
+  const Themetogler = () => {
+    theme === "light" ? setTheme("dark") : setTheme("light");
+  };
+
   return (
     <ThemeProvider theme={theme === "light" ? lightTheme : darkTheme}>
       <Routes>
-        <Route path="/" element={<Home Themetogler={Themetogler} theme={theme}  />} />
+        <Route
+          path="/"
+          element={
+            <Proctedroute>
+              <Home Themetogler={Themetogler} theme={theme} />
+            </Proctedroute>
+          }
+        />
         <Route
           path="/profile"
-          element={<Profile Themetogler={Themetogler} />}
+          element={
+            <Proctedroute>
+              <Profile Themetogler={Themetogler} theme={theme} />
+            </Proctedroute>
+          }
         />
-        <Route path="/groups" element={<Groups Themetogler={Themetogler} />} />
+        <Route
+          path="/groups"
+          element={
+            <Proctedroute>
+              <Groups Themetogler={Themetogler} theme={theme} />
+            </Proctedroute>
+          }
+        />
         <Route
           path="/settings"
-          element={<Settings Themetogler={Themetogler} />}
+          element={
+            <Proctedroute>
+              <Settings Themetogler={Themetogler} theme={theme} />
+            </Proctedroute>
+          }
         />
         <Route
           path="/Contacts"
-          element={<Contact Themetogler={Themetogler} />}
+          element={
+            <Proctedroute>
+              <Contact Themetogler={Themetogler} theme={theme} />
+            </Proctedroute>
+          }
         />
         <Route
           path="/chatinfo"
-          element={<Main Themetogler={Themetogler} />}
+          element={
+            <Proctedroute>
+              <Main Themetogler={Themetogler} theme={theme} />
+            </Proctedroute>
+          }
         />
-        <Route path="/signup"  element={<SignUp />} />
-        <Route path="/login"  element={<Login />} />
-        <Route path="/recover"  element={<Recover />} />
-        <Route path="/lorem"  element={<ConfirmPassword />} />
+        <Route path="/signup" element={<SignUp />} />
+        {/* <Route path="/network" element={<GenLoading />} /> */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/recover" element={<Recover />} />
+        <Route path="/lorem" element={<ConfirmPassword />} />
       </Routes>
     </ThemeProvider>
   );

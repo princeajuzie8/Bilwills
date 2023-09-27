@@ -18,14 +18,14 @@ import {
 } from "../Redux/slice/UserSlice";
 import { TiTick } from "react-icons/ti";
 import { FaTimes } from "react-icons/fa";
-import {  useAuthContext } from "../Context/Auth";
+import { useAuthContext } from "../Context/Auth";
 import CircularProgress from "@mui/material";
 import { RotatingLines } from "react-loader-spinner";
 import { db } from "../config/firebase/firebase";
 import bcrypt from "bcryptjs";
-import { FacebookAuthProvider } from "firebase/auth";
+import { GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
 import { Auth } from "../config/firebase/firebase";
-import { setDoc, doc, getDoc } from "firebase/firestore";
+import { setDoc, doc, getDoc, FieldValue } from "firebase/firestore";
 import { collection } from "firebase/firestore";
 import { where, query, onSnapshot } from "firebase/firestore";
 import ReactiveButton from "reactive-button";
@@ -37,8 +37,10 @@ import {
   USERNAME_REGEX,
   DOB_REGEX,
 } from "../utils/RegexUtils";
+import { serverTimestamp } from "firebase/firestore";
+
 import toast, { Toaster } from "react-hot-toast";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 const Main = styled.div`
   background-color: #fff;
   height: auto;
@@ -326,14 +328,13 @@ const Main = styled.div`
             [type="submit"] {
               margin-top: 15px;
 
-            padding-block: 10px;
+              padding-block: 10px;
               outline: none;
               border-radius: 5px;
               font-size: 15px;
               font-weight: 500;
 
-              cursor: pointer;
-              .content{
+              .content {
                 color: black;
                 font-weight: bold;
               }
@@ -383,7 +384,14 @@ const Main = styled.div`
 `;
 
 const SignUp = () => {
-  const  {signUp, GoogleSignin,FacebookSignin} = useAuthContext()
+  const {
+    signUp,
+    GoogleSignin,
+    FacebookSignin,
+    updateUserInfo,
+    userInfo,
+    time,
+  } = useAuthContext();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { userdata } = useSelector((state) => state.user);
@@ -415,6 +423,8 @@ const SignUp = () => {
   let pclose = document.getElementById("psclose");
   let ptype = document.getElementById("password");
 
+  // Initialize the FirebaseUI Widget using Firebase.
+
   const getButtonColor = () => {
     if (
       !isUsernameTaken &&
@@ -430,7 +440,6 @@ const SignUp = () => {
       return "#efefef"; // Grey color when conditions are not met
     }
   };
-  
 
   const passwordopen = () => {
     console.log("clicked me");
@@ -458,7 +467,6 @@ const SignUp = () => {
       setErrorMessages((prevErrors) => ({
         ...prevErrors,
         [fieldName]: "",
-        
       }));
       setIsValidData(true);
 
@@ -492,190 +500,229 @@ const SignUp = () => {
   //   }
   // };
 
+  console.log("userinfo:", userInfo);
+  const CreateWithGoogle = async () => {
+    try {
+      const SignUpGoogle = await GoogleSignin();
+      const googleUser = SignUpGoogle.user;
+     
+      if (googleUser) {
+        const originalDisplayName = googleUser.displayName || "";
+        const cleanedDisplayName = originalDisplayName.replace(
+          /[^a-zA-Z\s]/g,
+          ""
+        );
 
-
-
-  const CreateWithGoogle = async () =>{
-     try {
-       const SignUpGoogle = await GoogleSignin()
-       const googleUser = SignUpGoogle.user;
-  
-       if(googleUser ){
-          const originalDisplayName = googleUser.displayName || '';
-        const cleanedDisplayName = originalDisplayName.replace(/[^a-zA-Z\s]/g, '');
-  
         // Replace consecutive spaces with an empty string
-        const trimmedDisplayName = cleanedDisplayName.replace(/\s+/g, '')
-  
-        console.log('Cleaned displayName:', trimmedDisplayName);
-    await setDoc(doc(db, "users", googleUser.uid), {
-      displayName: trimmedDisplayName,
-      email: googleUser.email,
-      password: null,
-      uid: googleUser.uid,
-      dob: null,
-      phoneNumber: null,
-      photoURL: googleUser.photoURL,
-    });
-  
-    dispatch(
-      userCreateWithGoogle({
-        displayName: trimmedDisplayName,
-        email: googleUser.email,
-        password: null,
-        uid: googleUser.uid,
-        dob: null,
-        phoneNumber: googleUser.Phone,
-        photoURL: googleUser.photoURL,
-      })
-           )
-       }
+        const trimmedDisplayName = cleanedDisplayName.replace(/\s+/g, "");
 
-     } catch (error) {
-      console.log(error)
-      
-     }
-  }
-  const CreateWithFacebook = async () =>{
-     try {
-       const SignUpFacebook = await FacebookSignin()
-       const FacebookUser = SignUpFacebook.user;
+        console.log("Cleaned displayName:", trimmedDisplayName);
+        const timestamp = new Date(); // Convert Firestore timestamp to a JavaScript Date object
+        const formattedDate = `${timestamp.getMonth() + 1}/${timestamp.getDate()}/${timestamp.getFullYear()}`;
+        await setDoc(doc(db, "users", googleUser.uid), {
+          displayName: trimmedDisplayName,
+          email: googleUser.email,
+          uid: googleUser.uid,
+          dob: null,
+          phoneNumber: null,
+          photoURL: googleUser.photoURL,
+          createdAt: formattedDate,
+        });
+        await setDoc(doc(db, "userChats", googleUser.uid), {
+          
+        })
 
-       if(FacebookUser){
+        dispatch(
+          userCreateWithGoogle({
+            displayName: trimmedDisplayName,
+            email: googleUser.email,
+            uid: googleUser.uid,
+            dob: null,
+            phoneNumber: googleUser.Phone,
+            photoURL: googleUser.photoURL,
+            createdAt: formattedDate,
+          })
+        );
+        // updateUserInfo(userdata);
+        let toas = toast.success("Successfully created! 🚀", {
+          position: "top-right",
+          duration: 4000,
+        });
+        setTimeout(() => {
+          toast.dismiss(toas);
+          navigate("/");
+        }, 1000);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const CreateWithFacebook = async () => {
+    try {
+      const SignUpFacebook = await FacebookSignin();
+      const FacebookUser = SignUpFacebook.user;
 
-        const credential = FacebookAuthProvider.credentialFromResult(SignUpFacebook);
+      if (FacebookUser) {
+        const credential =
+          FacebookAuthProvider.credentialFromResult(SignUpFacebook);
         const accessToken = credential.accessToken;
         // fetch facebook graph api to get user actual profile picture
-        const pictureResponse = await fetch(`https://graph.facebook.com/${FacebookUser.providerData[0].uid}/picture?type=large&access_token=${accessToken}`);
-        
-        // const pictureBlob = await pictureResponse.blob();
-  
-        // // Create object URL for rendering (not for storing)
-        const originalDisplayName = FacebookUser.displayName || '';
-        const cleanedDisplayName = originalDisplayName.replace(/[^a-zA-Z\s]/g, '');
-  
-        // Replace consecutive spaces with an empty string
-        const trimmedDisplayName = cleanedDisplayName.replace(/\s+/g, '')
-        // const pictureObjectURL = URL.createObjectURL(pictureBlob);
-       setProfileImg(pictureResponse.url);
-       console.log(pictureResponse.url )
-    await setDoc(doc(db, "users", FacebookUser.uid), {
-      displayName:trimmedDisplayName,
-      email: FacebookUser.email,
-      password: null,
-      uid: FacebookUser.uid,
-      dob: null,
-      phoneNumber: null,
-      photoURL: pictureResponse.url,
-    });
-  
-    dispatch(
-      userCreateWithGoogle({
-        displayName: trimmedDisplayName,
-        email: FacebookUser.email,
-        password: null,
-        uid: FacebookUser.uid,
-        dob: null,
-        phoneNumber: FacebookUser.Phone,
-        photoURL: pictureResponse.url,
-      })
-           )
-       }
+        const pictureResponse = await fetch(
+          `https://graph.facebook.com/${FacebookUser.providerData[0].uid}/picture?type=large&access_token=${accessToken}`
+        );
 
-     } catch (error) {
+        // const pictureBlob = await pictureResponse.blob();
+
+        // // Create object URL for rendering (not for storing)
+        const originalDisplayName = FacebookUser.displayName || "";
+        const cleanedDisplayName = originalDisplayName.replace(
+          /[^a-zA-Z\s]/g,
+          ""
+        );
+
+        // Replace consecutive spaces with an empty string
+        const trimmedDisplayName = cleanedDisplayName.replace(/\s+/g, "");
+        // const pictureObjectURL = URL.createObjectURL(pictureBlob);
+        setProfileImg(pictureResponse.url);
+        console.log(pictureResponse.url);
+        const timestamp = new Date(); // Convert Firestore timestamp to a JavaScript Date object
+        const formattedDate = `${timestamp.getMonth() + 1}/${timestamp.getDate()}/${timestamp.getFullYear()}`;
+        await setDoc(doc(db, "users", FacebookUser.uid), {
+          displayName: trimmedDisplayName,
+          email: FacebookUser.email,
+          uid: FacebookUser.uid,
+          dob: null,
+          phoneNumber: null,
+          photoURL: pictureResponse.url,
+          createdAt: formattedDate,
+        });
+        // updateUserInfo(userdata);
+        await setDoc(doc(db, "userChats", FacebookUser.uid), {
+          
+        })
+
+        dispatch(
+          userCreateWithGoogle({
+            displayName: trimmedDisplayName,
+            email: FacebookUser.email,
+            uid: FacebookUser.uid,
+            dob: null,
+            phoneNumber: FacebookUser.Phone,
+            photoURL: pictureResponse.url,
+            createdAt: formattedDate,
+          })
+        );
+        let toas = toast.success("Successfully created! 🚀", {
+          position: "top-right",
+          duration: 4000,
+        });
+        setTimeout(() => {
+          toast.dismiss(toas);
+          navigate("/");
+        }, 1000);
+      }
+    } catch (error) {
       console.error(error);
 
       setState("error");
       const notify = () =>
-      toast.error(`${getFirebaseErrorCode(error)}`, {   position: "top-right", duration: 4000});
+        toast.error(`${getFirebaseErrorCode(error)}`, {
+          position: "top-right",
+          duration: 4000,
+        });
 
       notify();
-      
-     }
-  }
+    }
+  };
   useEffect(() => {
-    console.log({ "name": userdata.displayName });
+    console.log({ name: userdata.displayName });
   }, [userdata.displayName]);
- 
+
   const getFirebaseErrorCode = (error) => {
     if (error.code) {
       // Split the error message to extract the specific error code
-      const errorCode = error.code.split('/')[1];
+      const errorCode = error.code.split("/")[1];
       return errorCode;
     }
-    return 'Unknown error';
+    return "Unknown error";
   };
 
-
+  const allFieldsValid = Object.keys(errorMessages).every(
+    (field) => !errorMessages[field]
+  );
   const HandleCreateWithEmail = async (e) => {
-    const authToken = Cookies.get("authtoken")
+    const authToken = Cookies.get("authtoken");
     // console.log(authToken)
     e.preventDefault();
-    
-    const allFieldsValid = Object.keys(errorMessages).every(
-      (field) => !errorMessages[field]
-    );
+   
     setIsValidData(allFieldsValid);
-    if (!allFieldsValid || !username || !email || !password || !Phone || !dob) {
-      const notify = () =>
-        toast.error(`Fields may be empty or invalid`, {   position: "top-right", duration: 4000}
-        );
+    // if (!allFieldsValid || !username || !email || !password || !Phone || !dob) {
+    //   const notify = () =>
+    //     toast.error(`Fields may be empty or invalid`, {   position: "top-right", duration: 4000}
+    //     );
 
-      notify();
+    //   notify();
 
-      return;
-    } else {
-    }
+    //   return;
+    // } else {
+    // }
     try {
       setState("loading");
 
       if (isUsernameTaken === false) {
-       
-      
-        const userCresidential  = await  signUp(
-         
-          email,
-          password
-        );
+        const userCresidential = await signUp(email, password);
 
         setUserCresidential(userCresidential);
         console.log(userCresidential);
-       console.log(email)
+        // const registrationDate = serverTimestamp()
+        const timestamp = new Date(); // Convert Firestore timestamp to a JavaScript Date object
+        const formattedDate = `${timestamp.getMonth() + 1}/${timestamp.getDate()}/${timestamp.getFullYear()}`;
+
+        console.log(formattedDate);
         await setDoc(doc(db, "users", userCresidential.user.uid), {
           displayName: username,
           email: email,
-          password: password,
           uid: userCresidential.user.uid,
           dob: dob,
           phoneNumber: Phone,
           photoURL: profileImg,
+          createdAt: formattedDate,
         });
-      
+        await setDoc(doc(db, "userChats",  userCresidential.user.uid), {
+          
+        })
+
         dispatch(
           userCreateWithEmail({
             displayName: username,
             email: email,
-            password: password,
             id: userCresidential.user.uid,
             dob: dob,
             phone: Phone,
             photoURL: profileImg,
+            createdAt: formattedDate,
           })
         );
-        let toas =  toast.success('Successfully created! 🚀', {   position: "top-right", duration: 4000});
-        setTimeout(()=>{
-         toast.dismiss(toas)
-          // navigate("/login");
-        },1000)
-    
-          setState('success');
-      
-      }else{
+        // updateUserInfo(userdata);
+ 
+        console.log("updateuserinfo", updateUserInfo(userdata));
+        console.log("userinfo:", userInfo);
+        let toas = toast.success("Successfully created! 🚀", {
+          position: "top-right",
+          duration: 4000,
+        });
+        setTimeout(() => {
+          toast.dismiss(toas);
+          navigate("/login");
+        }, 1000);
+
+        setState("success");
+      } else {
         setState("error");
-        toast.error(`username is taken`, {   position: "top-right", duration: 4000});
-       
-
-
+        toast.error(`username is taken`, {
+          position: "top-right",
+          duration: 4000,
+        });
       }
 
       console.log("username is taken");
@@ -683,12 +730,13 @@ const SignUp = () => {
       console.error(error);
       setState("error");
       const notify = () =>
-      toast.error(`${getFirebaseErrorCode(error)}`, {   position: "top-right", duration: 4000});
+        toast.error(`${getFirebaseErrorCode(error)}`, {
+          position: "top-right",
+          duration: 4000,
+        });
 
       notify();
-
-     
-    } 
+    }
   };
 
   useEffect(() => {
@@ -708,7 +756,6 @@ const SignUp = () => {
             if (!querySnapshot.empty) {
               setIsUsernameTaken(true);
               console.log("taken");
-              
             } else {
               setIsUsernameTaken(false);
               console.log("available");
@@ -725,17 +772,13 @@ const SignUp = () => {
         setIsLoading(false);
       }
     };
- 
-  
-
 
     checkUsernameAvailability();
   }, [username]);
 
-
-
   return (
     <Main>
+      <div id="firebaseui-auth-container"></div>
       <div className="buyeroverall">
         <div className="buyersec1 bsec1">
           <figure>
@@ -772,10 +815,21 @@ const SignUp = () => {
 
             <div className="personalform">
               <div className="bregsocials">
-                <img src={bgoogle} alt="" className="bgoogle" onClick={()=>{
-                  CreateWithGoogle()
-                }} />
-                <img src={bfacebook} alt="" onClick={()=>{CreateWithFacebook()}}/>
+                <img
+                  src={bgoogle}
+                  alt=""
+                  className="bgoogle"
+                  onClick={() => {
+                    CreateWithGoogle();
+                  }}
+                />
+                <img
+                  src={bfacebook}
+                  alt=""
+                  onClick={() => {
+                    CreateWithFacebook();
+                  }}
+                />
               </div>
 
               <div className="orwith">
@@ -871,7 +925,9 @@ const SignUp = () => {
                     }}
                     required
                   />{" "}
-                  {errorMessages.email && email && <span>{errorMessages.email}</span>}
+                  {errorMessages.email && email && (
+                    <span>{errorMessages.email}</span>
+                  )}
                   <div className="phone">
                     <PhoneInput
                       defaultCountry="US"
@@ -880,6 +936,7 @@ const SignUp = () => {
                       required
                       maxLength={15}
                       // onChange={(e) => setPhone(e.target.value)}
+
                       onChange={setPhone}
                       size={22}
                       name="phonenumber"
@@ -956,22 +1013,40 @@ const SignUp = () => {
                     className="loginsubmitbtn"
                    
                   /> */}
-                        <ReactiveButton
-                         type="submit"
-                         id="signUpBtn"
-            buttonState={state}
-            onClick={HandleCreateWithEmail}
-            loadingText="Loading"
-            idleText="Submit"
-            successText="Done"
-            rounded
-           
-            style={{
-              background: getButtonColor(),
-              color: getButtonColor() === "#efefef" ? "gray" : "aliceblue",
-            }}
-          
-        />
+                  <ReactiveButton
+                    type="submit"
+                    id="signUpBtn"
+                    buttonState={state}
+                    onClick={HandleCreateWithEmail}
+                    loadingText="Loading"
+                    idleText="Submit"
+                    successText="Done"
+                    rounded
+                    disabled={
+                      !allFieldsValid ||
+                      !username ||
+                      !email ||
+                      !password ||
+                      !Phone ||
+                      !dob
+                        ? true
+                        : false
+                    }
+                    style={{
+                      background: getButtonColor(),
+                      cursor:
+                        !allFieldsValid ||
+                        !username ||
+                        !email ||
+                        !password ||
+                        !Phone ||
+                        !dob
+                          ? "not-allowed"
+                          : "pointer",
+                      color:
+                        getButtonColor() === "#efefef" ? "gray" : "aliceblue",
+                    }}
+                  />
                   <div className="bf1">
                     {universalError && (
                       <span className="errorMessage">{universalError}</span>
@@ -985,7 +1060,6 @@ const SignUp = () => {
                       <Link to="/privacy">Privacy Policy.</Link>{" "}
                     </p>
                   </div>
-            
                 </form>
                 {/* <img src={userdata.photoURL} alt="" />
                 <p>{userdata.displayName}</p> */}

@@ -6,7 +6,9 @@ import Usersslick from "../Components/Userslick";
 import Discard from "../Components/Dialog/Discard";
 import Chat from "../Chats/Chat";
 import Main from "../Chats/Main";
+import { useAuthContext } from "../Context/Auth";
 // const Button = styled.button`
+
 //   background: ${({ theme }) => theme.body};
 //   border: 2px solid ${({ theme }) => theme.toggleBorder};
 //   color: ${({ theme }) => theme.text};
@@ -38,6 +40,8 @@ position: relative;
 
 
 const Home = ({ theme, Themetogler }) => {
+  const {userInfo,currentUser, loading,logOut} = useAuthContext()
+ 
   return (
     <Container>
 

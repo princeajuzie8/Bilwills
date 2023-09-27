@@ -9,7 +9,11 @@ import 'custom-react-accordion/dist/Accordion.css'
 import { RiEditFill, RiPencilFill, RiUser2Line } from "react-icons/ri";
 import { MdOutlineKeyboardArrowDown } from 'react-icons/md';
 import { useSelector } from "react-redux"
-import { useState } from "react"
+import { useState } from "react";
+import { useAuthContext } from "../Context/Auth"
+import Skeleton from 'react-loading-skeleton'
+import 'react-loading-skeleton/dist/skeleton.css'
+
 const Container = styled.div`
     main{
       display: grid;
@@ -495,7 +499,8 @@ const Style = styled.div`
 }
 
 `;
-const Settings = ({ Themetogler }) => {
+const Settings = ({ Themetogler, theme }) => {
+const { userInfo,loading } = useAuthContext()
     const [on, setOn] = useState(true);
 
     const handleToggle = () => {
@@ -503,12 +508,13 @@ const Settings = ({ Themetogler }) => {
     
     };
     const {userdata} = useSelector((state)=> state.user)
+    console.log(userdata);
 
     return (
         <Container>
             <main>
                 <div className="navbar">
-                    <Navbar Themetogler={Themetogler} />
+                    <Navbar Themetogler={Themetogler} theme={theme} />
                 </div>
                 <div className="chats">
                     <div className="head">
@@ -525,11 +531,17 @@ const Settings = ({ Themetogler }) => {
                             <div className="icns">
                                 <RiPencilFill />
                             </div>
-                            <img src={userdata.photoURL} alt="" />
+                           { loading ?   <Skeleton
+                  circle
+                  height={92}
+                  containerClassName="avatar-skeleton"
+                  width={92}
+              />
+              :<img src={userInfo.photoURL} alt="" />}
                         </div>
                         <div className="secc2">
                             <div className="li">
-                                <h5>{userdata.displayName}</h5>
+                                <h5>{loading ? <Skeleton width={120} /> :userInfo.displayName}</h5>
                                 <div className="li2">
                                     <div className="sv">
                                         <span>Available</span>
@@ -561,7 +573,7 @@ const Settings = ({ Themetogler }) => {
                                     <ul>
                                         <li>
                                             <h4>Name</h4>
-                                            <span>{userdata.displayName}</span>
+                                            <span>{loading ? <Skeleton width={120} /> : userInfo.displayName}</span>
                                             <div className="editicon">
                                                
                                                     <RiEditFill />
@@ -571,11 +583,11 @@ const Settings = ({ Themetogler }) => {
                                         </li>
                                         <li>
                                             <h4>Email</h4>
-                                            <span>{userdata.email === null ? "example@gmail.com" : userdata.email}</span>
+                                            <span>{loading ? <Skeleton width={200} /> : userInfo.email === null ? "example@gmail.com" : userInfo.email}</span>
                                         </li>
                                         <li>
-                                            <h4>Time</h4>
-                                            <span>11:40 AM</span>
+                                            <h4>CreatedAt</h4>
+                                            <span>{loading ? <Skeleton width={90} /> : userInfo.createdAt}</span>
                                         </li>
                                         <li>
                                             <h4>Location</h4>

@@ -6,7 +6,8 @@ import { Link } from 'react-router-dom';
 import { RiSearchLine } from "react-icons/ri";
 import { RiVidiconLine } from "react-icons/ri";
 import { RiUser2Line } from "react-icons/ri";
-import { BsThreeDots } from "react-icons/bs"
+import { BsThreeDots } from "react-icons/bs";
+import { useChatContext } from '../Context/ChatContext';
 const Container = styled.div`
 *{
     margin: 0;
@@ -77,16 +78,17 @@ const Container = styled.div`
     }
 `
 const Chatnav = () => {
+    const {data} = useChatContext()
   return (
     <Container>
           <div className="general">
               <div className="main">
                   <div className="user">
                       <div className="image">
-                          <img src={User2} alt="" />
+                          <img src={data.users?.photoURL} alt="" />
                       </div>
                       <div className="username">
-                          <h5>Patrick Hendricks</h5>
+                          <h5>{data.users?.displayName}</h5>
                           <div className="icon">
                               <RiRecordCircleFill />
                       </div>

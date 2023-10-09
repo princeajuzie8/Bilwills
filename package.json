@@ -13,7 +13,6 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.5.0",
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^2.4.3",
     "bootstrap": "^5.2.3",
     "custom-react-accordion": "^1.0.4",
@@ -47,6 +46,7 @@
     "redux-session-storage": "^2.0.1",
     "slick-carousel": "^1.8.1",
     "styled-components": "^5.3.9",
+    "uuid": "^9.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -74,6 +74,10 @@
     ]
   },
   "devDependencies": {
-    "html-loader": "^4.2.0"
+    "autoprefixer": "^9.8.8",
+    "html-loader": "^4.2.0",
+    "postcss": "^8.4.31",
+    "postcss-cli": "^10.1.0",
+    "tailwindcss": "^3.3.3"
   }
 }

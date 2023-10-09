@@ -6,6 +6,14 @@ import { RiTimeLine } from "react-icons/ri";
 import { RiDownload2Line } from "react-icons/ri";
 import { RiMoreFill } from "react-icons/ri";
 import { RiFileTextFill } from "react-icons/ri";
+import { useState,useEffect } from "react";
+import { onSnapshot,doc } from "firebase/firestore";
+import { db } from "../config/firebase/firebase";
+import { useChatContext } from "../Context/ChatContext";
+import { useAuthContext } from "../Context/Auth";
+import toast from 'react-hot-toast';
+import CustomToast from "../Components/Notification";
+
 const Container = styled.div`
   * {
     margin: 0;
@@ -51,12 +59,12 @@ const Container = styled.div`
                   font-weight: 500;
                   font-size: 15px;
                   span {
-                    display: block;
+                    // display: block;
                   }
                 }
                 .image {
                   .mainimage {
-                    display: none;
+                    // display: none;
                     h4 {
                       margin: -7px 0px 10px 0px;
                     }
@@ -296,6 +304,10 @@ const Container = styled.div`
                   color: ${props => props.theme.text};
                   font-weight: 500;
                   font-size: 15px;
+                span{
+                  width: 300px;
+                }
+                 
                 }
                 .image {
                   .mainimage {
@@ -382,41 +394,30 @@ const Container = styled.div`
   }
 `;
 
-const Convers = () => {
+const Convers = ({message}) => {
+const {currentUser} = useAuthContext()
+const {data} = useChatContext()
+// console.log(message);
   return (
     <Container>
       <div className="gen">
-        <div className="me you">
+        <div className={`me ${message.senderid === currentUser.uid && "you"}`}>
           <div className="All">
             <div className="user">
-              <img src={user} alt="" />
+              <img src={message.senderid === currentUser.uid ? currentUser.photoURL : data.users.photoURL} alt="" />
             </div>
             <div className="contain">
               <div className="chatcontent">
                 <div className="sec1">
                   <div className="chatbg">
                     <div className="msgtext file typing image">
-                      <span>
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                        Voluptate nemo minima reiciendis quisquam est
-                        necessitatibus laborum sunt doloribus sint, vel
-                        consectetur unde dolor corporis aut nesciunt voluptatum
-                        illum alias nobis! Dignissimos illum beatae consectetur
-                        ipsa maiores laudantium, fugit molestias nam iste alias
-                        necessitatibus dolorum itaque officia magnam tempore vel
-                        aliquam quas corporis quae blanditiis ab. Sapiente alias
-                        vero, cumque officia maiores eveniet, sit distinctio
-                        facilis neque dicta dolorem cupiditate! Harum beatae
-                        quam soluta dolorem consectetur accusantium, aut magni
-                        impedit. Voluptatum dolorem perferendis quo blanditiis
-                        praesentium! Deleniti nobis optio quo laudantium
-                        reprehenderit corporis doloribus, eligendi saepe dolor,
-                        ipsa inventore nemo ea.
-                      </span>
+                     
+                      {message.img && 
+                      
                       <div className="mainimage">
                         <h4>Images</h4>
                         <div className="imagecontent">
-                          <img src={Image} alt="" />
+                          <img src={message.img} alt="" />
                           <ul>
                             <li>
                               <RiDownload2Line />
@@ -427,6 +428,11 @@ const Convers = () => {
                           </ul>
                         </div>
                       </div>
+                      }
+                       <span>
+                       {message.message}
+                      
+                      </span>
                       <div className="allfile">
                         <h4>File</h4>
                         <div className="filecontent">
@@ -476,14 +482,14 @@ const Convers = () => {
 
                 <div className="chatcomplete"></div>
                 <div className="username">
-                  <span>Patrick Hendricks</span>
+                  <span>{message.senderid === currentUser.uid ? currentUser.displayName : data.users.displayName}</span>
                 </div>
               </div>
             </div>
           </div>
           <div className="imageupload"></div>
         </div>
-        <div className=" you me">
+        {/* <div className=" you me">
           <div className="All">
             <div className="user">
               <img src={user} alt="" />
@@ -520,7 +526,7 @@ const Convers = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </Container>
   );

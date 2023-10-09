@@ -15,6 +15,7 @@ import ConfirmPassword from "./Auth/ConfirmPassword";
 import Proctedroute from "./proctedRoute/Proctedroute";
 import NoInternet from "./utils/NoInternet";
 import GenLoading from "./utils/GenLoading";
+
 function App() {
   const [theme, setTheme] = useDarkMode();
 
@@ -66,7 +67,7 @@ function App() {
           }
         />
         <Route
-          path="/chatinfo"
+          path="/chatinfo/:id"
           element={
             <Proctedroute>
               <Main Themetogler={Themetogler} theme={theme} />

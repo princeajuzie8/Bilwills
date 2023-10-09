@@ -3,6 +3,10 @@ import styled from "styled-components"
 import Slider from "react-slick";
 import Usersslick from "./Userslick";
 import Chat from "../Chats/Chat";
+import { useEffect, useState } from "react";
+import { where, query, onSnapshot,collection, getDocs, orderBy, startAt } from "firebase/firestore";
+import { db } from "../config/firebase/firebase";
+
 const Container = styled.div`
   
     main{
@@ -121,10 +125,68 @@ const Container = styled.div`
 
 
 const Leftsidebar = () => {
-   
 
+  const [username,setUserName] = useState('')
+const [User, setUser] = useState(null);
+ const [err, setError]= useState(null)
+const [loading,setLoading] = useState(true)
+const HandleChange = (e) => {
+  setUserName(e.target.value)
+}
 
+ useEffect(()=>{
+const UserAvalability  = async ()=>{
+  const usersRef = collection(db, "users");
+  const usernameQuery = query(
+    usersRef,
+    where("displayName", ">=", username),
+    orderBy("displayName"), // Order by displayName
+    where("displayName", "<=", username + '\uf8ff'),
+        startAt(username)
+  );
+  try {
 
+    const unsubscribe = onSnapshot(usernameQuery, (querySnapshot) => {
+      
+      const SearchDelay = setTimeout(async ()=>{
+
+        if (!querySnapshot.empty) {
+          querySnapshot.forEach((doc) => {
+            const data = doc.data()
+                      
+            const displayName = data.displayName.toLowerCase();
+            setUser(data)
+            setLoading(false)
+            if (displayName.includes(username)) {
+                 // console.log(doc.id, " => ", doc.data());
+       
+          
+            }
+          });
+      
+        }
+      
+        return () => {
+          unsubscribe();
+        clearTimeout(SearchDelay)
+        };
+        },300);
+      })
+  } catch (error) {
+    console.log(error);
+    setError(error)
+    
+  }
+  
+}
+
+if(username.trim() !== ""){
+
+  UserAvalability()
+}else{
+  setUser(null)
+}
+ },[username])
 
 
     return (
@@ -142,7 +204,7 @@ const Leftsidebar = () => {
                                         <RiSearchLine />
                                     </div>
 
-                                    <input type="search" name="" id="" placeholder="Search messages or users" />
+                                    <input type="search" name="" id="" placeholder="Search messages or users" onChange={HandleChange} value={username} />
                                 </div>
 
                             </div>
@@ -161,7 +223,7 @@ const Leftsidebar = () => {
               <div className="chatgen">
 
               <div className="chat">
-                <Chat />
+                <Chat  User={User} loading={loading}/>
                 </div>
 
               </div>

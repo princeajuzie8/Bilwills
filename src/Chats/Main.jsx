@@ -5,10 +5,15 @@ import Chatnav from "./Chatnav";
 import Chatfotter from "./Chatfotter";
 import Convers from "./convers";
 import Discard from "../Components/Dialog/Discard";
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import ImageDialog from "../Components/Dialog/imageDialog";
 import { Discardcontextapi } from "../Context/discardcontext";
 import Filedialog from "../Components/Dialog/Filedialog";
+import { useChatContext } from "../Context/ChatContext";
+import { onSnapshot,doc } from "firebase/firestore";
+import { db } from "../config/firebase/firebase";
+import CustomToast from "../Components/Notification";
+import toast, { Toaster } from "react-hot-toast";
 const Container = styled.div`
 position: relative;
   main {
@@ -88,10 +93,29 @@ const Main = ({ theme, Themetogler }) => {
   const { Opendiscard, setOpendiscard } = Discardcontextapi()
   const [Openimgdialog, setOpenimgdialog] = useState(false)
   const [FileDialogs, setFiledDialog] = useState(false)
+  
+  const [messages, setMessages] = useState([]);
+  const { data} = useChatContext()
+ 
+  useEffect(()=>{   
+ const unsub = onSnapshot(doc(db,"chats",data.chatID),(doc)=>{
+doc.data() && setMessages(doc.data().messages)
+
+ })
+
+ return () =>{
+  unsub()
+ }
+  },[data.chatID])
+
+  console.log("all data", messages);
+
   return (
     <Container>
-
       {/* <Button onClick={Themetogler}></Button> */}
+      <Toaster />
+
+  
       <main>
         <div className="navbar">
 
@@ -106,10 +130,16 @@ const Main = ({ theme, Themetogler }) => {
             <nav>
               <Chatnav />
             </nav>
+
             <main>
-              <Convers />
+            {messages &&  messages.map(m =>(
+
+              <Convers message={m} key={m.uid}/>
         
+              ))
+                  } 
             </main>
+
             <footer>
               <Chatfotter setOpendiscard={setOpendiscard} />
             </footer>

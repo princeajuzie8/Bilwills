@@ -766,7 +766,7 @@ const SignUp = () => {
             unsubscribe();
             clearTimeout(SearchDelay);
           };
-        }, 300);
+        }, 10);
       } else {
         setIsUsernameTaken(false);
         setIsLoading(false);

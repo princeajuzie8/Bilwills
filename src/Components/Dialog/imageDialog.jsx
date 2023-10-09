@@ -58,7 +58,6 @@ const Container = styled.div`
 const ImageDialog = ({ picture, setImgdialog, setPicture, inputRef }) => {
     const{setOpendiscard}= Discardcontextapi()
    
-
     const Togref = useRef(null)
     const Refs = inputRef
   
@@ -94,7 +93,7 @@ const ImageDialog = ({ picture, setImgdialog, setPicture, inputRef }) => {
                       
                       <div className="main" ref={inputRef} >
                          
-                          <img src={picture.img} alt="" />
+                          <img src={picture} alt="" />
                           <div className="icon">
                               <RiDeleteBin5Line onClick={() => {
                                   setImgdialog(false)
